@@ -1,0 +1,83 @@
+{
+    "ticket": {
+        "id": 47055,
+        "subject": "hello jsut check",
+        "status": "open",
+        "customerName": "Ajay",
+        "customerEmail": "ajay.kumar22@channelplay.in",
+        "deskId": 19,
+        "assignedUserId": null,
+        "ccRecipients": [],
+        "createdAt": "2025-05-21T08:38:24.404Z",
+        "updatedAt": "2025-05-21T08:41:05.209Z",
+        "resolvedAt": null,
+        "desk": {
+            "id": 19,
+            "name": " Gmail Support",
+            "email": "ajaykumar23aps@gmail.com",
+            "forwardingEmail": "",
+            "description": null,
+            "isDefault": false,
+            "smtpHost": "smtp.gmail.com",
+            "smtpPort": "587",
+            "smtpUser": "ajaykumar23aps@gmail.com",
+            "smtpPassword": "ncvoytdhdvayexnd",
+            "smtpSecure": true,
+            "smtpFromName": "Gmail Support",
+            "useDirectEmail": true,
+            "imapHost": "imap.gmail.com",
+            "imapPort": "993",
+            "imapUser": "ajaykumar23aps@gmail.com",
+            "imapPassword": "ncvoytdhdvayexnd",
+            "imapSecure": true,
+            "useImapPolling": true,
+            "createdAt": "2025-05-21T07:26:47.006Z",
+            "updatedAt": "2025-05-21T07:26:47.006Z"
+        },
+        "assignedUser": null
+    },
+    "messages": [
+        {
+            "id": 46613,
+            "ticketId": 47055,
+            "content": "nmnmhjhjhj5654535",
+            "sender": "Ajay",
+            "senderEmail": "ajay.kumar22@channelplay.in",
+            "isAgent": false,
+            "messageId": "<ticket-47055-new-1747816704422-836ea45ubki@gmail.com>",
+            "createdAt": "2025-05-21T08:38:24.441Z",
+            "isSatisfactionResponse": false,
+            "satisfactionRating": null,
+            "ccRecipients": [],
+            "attachments": []
+        },
+        {
+            "id": 46624,
+            "ticketId": 47055,
+            "content": "okay",
+            "sender": "Admin User",
+            "senderEmail": "admin@example.com",
+            "isAgent": true,
+            "messageId": "<ticket-47055-reply-1747816794865-335bcwpqtoo@stub-domain>",
+            "createdAt": "2025-05-21T08:39:54.884Z",
+            "isSatisfactionResponse": false,
+            "satisfactionRating": null,
+            "ccRecipients": [],
+            "attachments": []
+        },
+        {
+            "id": 46635,
+            "ticketId": 47055,
+            "content": "received",
+            "sender": "Admin User",
+            "senderEmail": "admin@example.com",
+            "isAgent": true,
+            "messageId": "<ticket-47055-reply-1747816865004-xifmfhzqr0d@stub-domain>",
+            "createdAt": "2025-05-21T08:41:05.150Z",
+            "isSatisfactionResponse": false,
+            "satisfactionRating": null,
+            "ccRecipients": [],
+            "attachments": []
+        }
+    ]
+}

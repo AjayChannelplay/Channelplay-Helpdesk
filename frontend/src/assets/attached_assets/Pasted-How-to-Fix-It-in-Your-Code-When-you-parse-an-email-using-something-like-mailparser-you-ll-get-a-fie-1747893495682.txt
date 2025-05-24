@@ -1,0 +1,90 @@
+How to Fix It in Your Code
+When you parse an email using something like mailparser, you’ll get a field called parsed.date. This is the actual time the email was sent, which is what you want.
+
+✅ Step-by-Step Fix
+1. Parse the Email
+You likely already have something like this:
+
+js
+Copy
+Edit
+const { simpleParser } = require('mailparser');
+
+const parsed = await simpleParser(imapFetchedMail);
+2. Get the Actual Sent Time
+js
+Copy
+Edit
+const actualSentTime = parsed.date; // THIS is what you want
+This will return a Date object like:
+
+makefile
+Copy
+Edit
+2025-05-22T06:35:00.000Z
+3. Save It in Your Ticket
+Update your DB logic to store parsed.date in your ticket model instead of new Date() or Date.now().
+
+js
+Copy
+Edit
+const ticket = new Ticket({
+  subject: parsed.subject,
+  from: parsed.from.text,
+  body: parsed.text,
+  htmlBody: parsed.html,
+  emailSentAt: parsed.date, // ✅ Actual sent time
+  createdAt: parsed.date,   // Optional: also set createdAt manually if needed
+});
+await ticket.save();
+If you’re using timestamps: true in your Mongoose schema, by default it sets createdAt to Date.now(). You can override it like this:
+
+js
+Copy
+Edit
+const ticket = new Ticket({
+  ...,
+  createdAt: parsed.date
+});
+await ticket.save({ timestamps: false }); // ✅ manually override createdAt
+🧪 Double-Check Sample Parsed Output
+Here's a sample output from mailparser:
+
+json
+Copy
+Edit
+{
+  "from": { "text": "Alice <alice@example.com>" },
+  "subject": "Help needed",
+  "text": "Hi, I'm stuck...",
+  "date": "2025-05-22T06:35:00.000Z",
+  ...
+}
+That "date" is the exact timestamp when the user sent the email. That’s what should show up in your dashboard.
+
+✅ Final Result
+Once implemented:
+
+Dashboard will show the actual sent date/time
+
+Not the time your poller picked up the email
+
+Email timelines and threads will be accurate ✅
+
+Would you like me to help you edit your current poller code to inject this change properly into your DB layer? Just paste a snippet of your poll logic and I’ll update it for you.
+
+
+
+
+
+
+
+
+
+
+
+Tools
+
+
+
+ChatGPT can make mistake

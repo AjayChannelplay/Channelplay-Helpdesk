@@ -1,0 +1,148 @@
+2025-05-01 19:06:39.47
+ffb063f2
+User
+[ma5esawkc9d] ⚠️ Missing or invalid sender email:
+2025-05-01 19:06:39.47
+ffb063f2
+User
+1:36:39 PM [express] POST /api/inbound-email 200 in 1ms
+2025-05-01 19:06:39.47
+ffb063f2
+User
+[ma5esawkc9d] Email fingerprint: ::
+2025-05-01 19:06:39.47
+ffb063f2
+User
+[ma5esawkc9d] Email metadata: {"sender":"","recipient":"","subject":"","messageId":"generated-1746106599476","inReplyTo":"none","references":"none","hasAttachments":false,"attachmentsCount":0,"ticketId":null}
+2025-05-01 19:06:39.47
+ffb063f2
+User
+[ma5esawkc9d] ⚠️⚠️⚠️ NEW TICKET MODE ACTIVATED - No existing ticket found ⚠️⚠️⚠️
+2025-05-01 19:06:39.47
+ffb063f2
+User
+[ma5esawkc9d] Using fallback sender email: unknown@example.com
+2025-05-01 19:06:39.47
+ffb063f2
+User
+[ma5esawkc9d] 🔄 Original Subject: ""
+2025-05-01 19:06:39.47
+ffb063f2
+User
+[ma5esawkc9d] 🧼 Cleaned Subject: "No Subject"
+2025-05-01 19:06:39.47
+ffb063f2
+User
+[ma5esawkc9d] 🔍 Searching for desk matching recipient:
+2025-05-01 19:06:39.63
+ffb063f2
+User
+[ma5esawkc9d] 📊 Available desks: health (health@mail.desks.chat), postmaster (postmaster@mail.desks.chat), tech (tech@mail.desks.chat)
+2025-05-01 19:06:39.63
+ffb063f2
+User
+Looking for desk by email: , extracted local part:
+2025-05-01 19:06:39.67
+ffb063f2
+User
+No desk found for email or local part
+2025-05-01 19:06:39.67
+ffb063f2
+User
+[ma5esawkc9d] 📨 Email Headers: {"to":"","from":"","subject":"","recipientNormalized":""}
+2025-05-01 19:06:39.67
+ffb063f2
+User
+[ma5esawkc9d] ⚠️ No matching desk found for , looking for default desk
+2025-05-01 19:06:39.70
+ffb063f2
+User
+[ma5esawkc9d] 📬 Using default desk: ID 1 - postmaster (postmaster@mail.desks.chat)
+2025-05-01 19:06:39.70
+ffb063f2
+User
+[ma5esawkc9d] 🔄 Creating new ticket from email with round-robin assignment for desk 1
+2025-05-01 19:06:39.70
+ffb063f2
+User
+🎫 Creating new ticket with desk ID 1
+2025-05-01 19:06:39.72
+ffb063f2
+User
+✓ Verified desk postmaster (postmaster@mail.desks.chat) exists with ID 1
+2025-05-01 19:06:39.72
+ffb063f2
+User
+🔄 Starting round-robin assignment for desk ID 1
+2025-05-01 19:06:40.02
+ffb063f2
+User
+👥 Available users for desk ID 1: Admin User (ID: 1)
+2025-05-01 19:06:40.02
+ffb063f2
+User
+🔄 Starting round-robin assignment for desk ID 1
+2025-05-01 19:06:40.22
+ffb063f2
+User
+📋 Desk info: postmaster (postmaster@mail.desks.chat)
+2025-05-01 19:06:40.62
+ffb063f2
+User
+👥 Found 1 users assigned to desk 1: Admin User (ID: 1)
+2025-05-01 19:06:40.62
+ffb063f2
+User
+🔍 Looking for most recent ticket assignment for desk 1 with users: 1
+2025-05-01 19:06:40.72
+ffb063f2
+User
+🔍 Last ticket for desk 1 was assigned to user ID 1
+2025-05-01 19:06:40.72
+ffb063f2
+User
+✅ Round-robin: Previous assignment was to user at index 0, next is index 0: Admin User (ID: 1)
+2025-05-01 19:06:40.92
+ffb063f2
+User
+✅ Assigned ticket to user Admin User (ID: 1) via round-robin
+2025-05-01 19:06:41.12
+ffb063f2
+User
+✅ Created ticket #94 with subject "No Subject" and assignedUserId=1
+2025-05-01 19:06:41.32
+ffb063f2
+User
+[ma5esawkc9d] ✅ Ticket #94 from email was assigned to Admin User (ID: 1) via round-robin
+2025-05-01 19:06:41.32
+ffb063f2
+User
+[ma5esawkc9d] 💌 Created new ticket #94 with RFC-compliant message ID: <ticket-94-new-1746106601320-w09ovxo55zg@mail.desks.chat>
+2025-05-01 19:06:41.32
+ffb063f2
+User
+[ma5esawkc9d] ℹ️ Completely empty email detected - adding empty email placeholder
+2025-05-01 19:06:41.72
+ffb063f2
+User
+DB: Getting ticket with ID: 94
+2025-05-01 19:06:41.84
+ffb063f2
+User
+DB: Found ticket 94: Subject: "No Subject", Status: open, DeskId: 1, AssignedUserId: 1
+2025-05-01 19:06:42.02
+ffb063f2
+User
+[ma5esawkc9d] ✅ SUCCESSFULLY created NEW ticket #94
+2025-05-01 19:06:42.02
+ffb063f2
+User
+[ma5esawkc9d] 🔑 Ticket ID: #94 with subject: "No Subject"
+2025-05-01 19:06:42.02
+ffb063f2
+User
+[ma5esawkc9d] Source IP: 35.212.81.102, 34.117.33.233, 35.191.14.8,34.68.1.153 (for troubleshooting purposes)
+2025-05-01 19:06:42.02
+ffb063f2
+User
+[ma5esawkc9d] 📊 Email webhook processing complete

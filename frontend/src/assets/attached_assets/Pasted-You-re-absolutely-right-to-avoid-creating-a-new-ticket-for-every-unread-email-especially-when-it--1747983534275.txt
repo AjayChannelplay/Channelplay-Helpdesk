@@ -1,0 +1,107 @@
+You're absolutely right — to avoid creating a new ticket for every unread email, especially when it’s part of an ongoing conversation, you need to update your polling logic to:
+
+Check if the incoming email is a reply to an existing conversation, and attach it to the correct ticket instead of creating a new one.
+
+✅ Goal:
+When polling IMAP for unread messages:
+
+🧠 If email is a reply to an existing conversation, add as a message to that ticket
+
+🆕 If it's a new conversation, create a new ticket
+
+✅ HOW TO IMPLEMENT IT
+Step 1: Use Email Headers to Identify Threads
+Each email contains headers like:
+
+Header	Purpose
+Message-ID	Unique ID of this email
+In-Reply-To	Message-ID of the email this is replying to
+References	All previous message IDs in thread
+
+🧠 Logic:
+If In-Reply-To matches any existing Message-ID from your database → treat as reply
+
+Else → new ticket
+
+Step 2: Modify Your IMAP Parser Logic
+Use mailparser to extract messageId, inReplyTo, and references:
+
+js
+Copy
+Edit
+const { simpleParser } = require('mailparser');
+
+simpleParser(emailStream, async (err, parsed) => {
+  const messageId = parsed.messageId;
+  const inReplyTo = parsed.inReplyTo;
+  const subject = parsed.subject;
+  const from = parsed.from.text;
+  const body = parsed.text || parsed.html;
+  const date = parsed.date;
+
+  // 🔍 Check if it's a reply
+  let existingTicket = null;
+  if (inReplyTo) {
+    existingTicket = await Ticket.findOne({ 'messages.messageId': inReplyTo });
+  }
+
+  if (existingTicket) {
+    // 📌 Append to existing ticket
+    existingTicket.messages.push({
+      from,
+      body,
+      messageId,
+      sentAt: date
+    });
+    await existingTicket.save();
+  } else {
+    // 🆕 Create new ticket
+    const newTicket = new Ticket({
+      subject,
+      from,
+      createdAt: date,
+      messages: [{
+        from,
+        body,
+        messageId,
+        sentAt: date
+      }]
+    });
+    await newTicket.save();
+  }
+});
+Step 3: Database Schema Recommendation
+js
+Copy
+Edit
+// Ticket Schema
+{
+  subject: String,
+  from: String,
+  createdAt: Date,
+  messages: [
+    {
+      from: String,
+      body: String,
+      messageId: String,
+      sentAt: Date
+    }
+  ]
+}
+Step 4: Ensure Message-ID Uniqueness
+To avoid duplicates, you can:
+
+js
+Copy
+Edit
+await Ticket.updateOne(
+  { 'messages.messageId': { $ne: parsed.messageId } },
+  { $push: { messages: { ... } } }
+);
+✅ Summary
+Task	How
+Avoid duplicate tickets	Use In-Reply-To header
+Identify conversation threads	Check if inReplyTo matches any existing messageId
+Add reply to existing ticket	Push to ticket.messages array
+Create new ticket if none found	If inReplyTo not matched
+

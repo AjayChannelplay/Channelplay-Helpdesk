@@ -1,0 +1,115 @@
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+<--- Last few GCs --->
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+[124:0x37de73b0] 814132 ms: Scavenge 250.2 (254.9) -> 249.2 (254.9) MB, 0.38 / 0.00 ms (average mu = 0.775, current mu = 0.983) allocation failure;
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+[124:0x37de73b0] 814137 ms: Scavenge 250.2 (254.9) -> 249.2 (254.9) MB, 0.36 / 0.00 ms (average mu = 0.775, current mu = 0.983) allocation failure;
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+[124:0x37de73b0] 814221 ms: Mark-Compact 257.4 (262.2) -> 256.0 (262.2) MB, 69.49 / 0.01 ms (average mu = 0.769, current mu = 0.534) allocation failure; scavenge might not succeed
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+<--- JS stacktrace --->
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+----- Native stack trace -----
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+1: 0xab52d0 node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+2: 0xe7ea10 v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+3: 0xe7edf4 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+4: 0x10ae4b7 [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+5: 0x10c7029 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+6: 0x109fc97 v8::internal::HeapAllocator::AllocateRawWithLightRetrySlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+7: 0x10a08d4 v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+8: 0x107ec34 v8::internal::Factory::AllocateRaw(int, v8::internal::AllocationType, v8::internal::AllocationAlignment) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+9: 0x1070d0b v8::internal::FactoryBase::NewRawOneByteString(int, v8::internal::AllocationType) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+10: 0x11dfd97 v8::internal::JsonParser::MakeString(v8::internal::JsonString const&, v8::internal::Handle) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+11: 0x11e4690 [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+12: 0x11e69cf v8::internal::JsonParser::ParseJson(v8::internal::Handle) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+13: 0xf16f75 v8::internal::Builtin_JsonParse(int, unsigned long*, v8::internal::Isolate*) [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.81
+6fbd9f6a
+User
+14: 0x18f7df6 [/nix/store/wfxq6w9bkp5dcfr8yb6789b0w7128gnb-nodejs-20.18.1/bin/node]
+2025-05-16 14:51:02.94
+6fbd9f6a
+User
+Aborted
+2025-05-16 14:51:02.96
+6fbd9f6a
+System
+command finished with error [npm run start]: exit status 134
+2025-05-16 14:51:32.48
+6fbd9f6a
+User
+> rest-express@1.0.0 start
+2025-05-16 14:51:32.48
+6fbd9f6a
+User
+> NODE_ENV=production node dist/index.js

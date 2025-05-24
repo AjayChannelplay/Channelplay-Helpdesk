@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Email Table Formatting</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .test-section {
+      margin-bottom: 40px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+    pre {
+      background-color: #f8fafc;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+    .raw, .formatted {
+      margin-top: 16px;
+    }
+    .label {
+      font-weight: bold;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+      background-color: #f1f5f9;
+      display: inline-block;
+      border-radius: 4px;
+    }
+    
+    /* Email Table Styling */
+    .email-table {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin: 10px 0;
+      overflow: hidden;
+      background-color: #f8fafc;
+    }
+    .table-row {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      min-height: 28px;
+    }
+    .table-row:last-child {
+      border-bottom: none;
+    }
+    .table-cell-key {
+      flex: 0 0 150px;
+      font-weight: 500;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      background-color: #f1f5f9;
+      border-right: 1px solid #e2e8f0;
+      color: #475569;
+    }
+    .table-cell-value {
+      flex: 1;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      background-color: #ffffff;
+    }
+    .table-full-row {
+      padding: 6px 12px;
+      font-weight: 500;
+      background-color: #f1f5f9;
+      color: #475569;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .table-full-row:last-child {
+      border-bottom: none;
+    }
+    
+    /* Employee Table Styling */
+    .employee-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 0.875rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .table-header-row {
+      display: flex;
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: #475569;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .table-data-row {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      background-color: #ffffff;
+    }
+    .table-data-row:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .table-data-row:last-child {
+      border-bottom: none;
+    }
+    .table-header-cell,
+    .table-data-cell {
+      padding: 8px 12px;
+      flex: 1;
+      text-align: left;
+      border-right: 1px solid #e2e8f0;
+      min-width: 90px;
+      word-break: break-word;
+      display: flex;
+      align-items: center;
+    }
+    .table-header-cell:last-child,
+    .table-data-cell:last-child {
+      border-right: none;
+    }
+    
+    /* Simple fixed-width table */
+    .fixed-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #e2e8f0;
+      margin: 10px 0;
+      font-size: 0.875rem;
+    }
+    .fixed-table th,
+    .fixed-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border: 1px solid #e2e8f0;
+    }
+    .fixed-table th {
+      background-color: #f1f5f9;
+      font-weight: 500;
+      color: #475569;
+    }
+    .fixed-table tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Email Table Formatting Test</h1>
+  
+  <div class="test-section">
+    <h2>Example 1: Employee Record Table</h2>
+    <div class="raw">
+      <div class="label">Raw Email Content</div>
+      <pre>
+Emp. Code      Emp. Name           City        Designation       Project Code      Project Type       Current CTC      To be revised CTC      Date of revision
+Rakesh Sharma  Alwar               VM          100399            Samsung           Visual Merchandising North India     23998    304805          Rakesh Sharma  
+Jaipur         VM                  100399      Samsung           Visual Merchandising North India      304805   23998                         
+      </pre>
+    </div>
+    
+    <div class="formatted">
+      <div class="label">Formatted as HTML</div>
+      <div class="employee-table">
+        <div class="table-header-row">
+          <div class="table-header-cell">Emp. Code</div>
+          <div class="table-header-cell">Emp. Name</div>
+          <div class="table-header-cell">City</div>
+          <div class="table-header-cell">Designation</div>
+          <div class="table-header-cell">Project Code</div>
+          <div class="table-header-cell">Project Type</div>
+          <div class="table-header-cell">Current CTC</div>
+          <div class="table-header-cell">To be revised CTC</div>
+          <div class="table-header-cell">Date of revision</div>
+        </div>
+        <div class="table-data-row">
+          <div class="table-data-cell">Rakesh Sharma</div>
+          <div class="table-data-cell">Alwar</div>
+          <div class="table-data-cell">VM</div>
+          <div class="table-data-cell">100399</div>
+          <div class="table-data-cell">Samsung</div>
+          <div class="table-data-cell">Visual Merchandising North India</div>
+          <div class="table-data-cell">23998</div>
+          <div class="table-data-cell">304805</div>
+          <div class="table-data-cell">Rakesh Sharma</div>
+        </div>
+        <div class="table-data-row">
+          <div class="table-data-cell">Jaipur</div>
+          <div class="table-data-cell">VM</div>
+          <div class="table-data-cell">100399</div>
+          <div class="table-data-cell">Samsung</div>
+          <div class="table-data-cell">Visual Merchandising North India</div>
+          <div class="table-data-cell">304805</div>
+          <div class="table-data-cell">23998</div>
+          <div class="table-data-cell"></div>
+          <div class="table-data-cell"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Example 2: Key-Value Pairs</h2>
+    <div class="raw">
+      <div class="label">Raw Email Content</div>
+      <pre>
+Date: 2025-04-18
+Requestor Comments: Regularize the attendence for on Good friday 18 april 2025
+Status: Full Day Regularization Request Rejected
+Rejection Comments : Good Friday is a public holiday, so attendance regularization is not applicable. Please do not request regularization for holidays. For more details, chat with the HR Policy & Processes Assistant in 1Office.
+
+Sign-in Time     Sign-out Time    Work Hours       Attendance Status
+Recorded         N/A              N/A              Absent
+      </pre>
+    </div>
+    
+    <div class="formatted">
+      <div class="label">Formatted as HTML</div>
+      <div class="email-table">
+        <div class="table-row">
+          <div class="table-cell-key">Date</div>
+          <div class="table-cell-value">2025-04-18</div>
+        </div>
+        <div class="table-row">
+          <div class="table-cell-key">Requestor Comments</div>
+          <div class="table-cell-value">Regularize the attendence for on Good friday 18 april 2025</div>
+        </div>
+        <div class="table-row">
+          <div class="table-cell-key">Status</div>
+          <div class="table-cell-value">Full Day Regularization Request Rejected</div>
+        </div>
+        <div class="table-row">
+          <div class="table-cell-key">Rejection Comments</div>
+          <div class="table-cell-value">Good Friday is a public holiday, so attendance regularization is not applicable. Please do not request regularization for holidays. For more details, chat with the HR Policy & Processes Assistant in 1Office.</div>
+        </div>
+      </div>
+      <br>
+      <table class="fixed-table">
+        <tr>
+          <th>Sign-in Time</th>
+          <th>Sign-out Time</th>
+          <th>Work Hours</th>
+          <th>Attendance Status</th>
+        </tr>
+        <tr>
+          <td>Recorded</td>
+          <td>N/A</td>
+          <td>N/A</td>
+          <td>Absent</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Example 3: Regular Tabular Data</h2>
+    <div class="raw">
+      <div class="label">Raw Email Content</div>
+      <pre>
+Name            Age     Position        Department      Years of Service
+John Smith      34      Senior Manager   Marketing       8
+Mary Johnson    29      Developer        Engineering     4
+Robert Davis    42      Director         Finance         12
+      </pre>
+    </div>
+    
+    <div class="formatted">
+      <div class="label">Formatted as HTML</div>
+      <table class="fixed-table">
+        <tr>
+          <td>Name</td>
+          <td>Age</td>
+          <td>Position</td>
+          <td>Department</td>
+          <td>Years of Service</td>
+        </tr>
+        <tr>
+          <td>John Smith</td>
+          <td>34</td>
+          <td>Senior Manager</td>
+          <td>Marketing</td>
+          <td>8</td>
+        </tr>
+        <tr>
+          <td>Mary Johnson</td>
+          <td>29</td>
+          <td>Developer</td>
+          <td>Engineering</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td>Robert Davis</td>
+          <td>42</td>
+          <td>Director</td>
+          <td>Finance</td>
+          <td>12</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  
+</body>
+</html>

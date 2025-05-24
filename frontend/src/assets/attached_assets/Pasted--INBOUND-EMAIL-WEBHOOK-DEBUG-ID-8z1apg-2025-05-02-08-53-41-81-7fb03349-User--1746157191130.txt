@@ -1,0 +1,77 @@
+========== INBOUND EMAIL WEBHOOK [DEBUG-ID: 8z1apg] ==========
+2025-05-02 08:53:41.81
+7fb03349
+User
+Headers: {"host":"cphelp.replit.app","user-agent":"Go-http-client/2.0","content-length":"708186","accept":"*/*","accept-encoding":"gzip","content-type":"multipart/form-data; boundary=8667cedf6102f2dd837ad8a571b1297d89e26085ffbc40351bc6ae4d1b13","server-timing":"depproxy;dur=1746156221626, pid1req;dur=1746156221808","traceparent":"00-220ce1731db2f32af3a9dbb1727e1308-7ae7dc5a1fbdd6b5-01","via":"1.1 google","x-cloud-trace-context":"220ce1731db2f32af3a9dbb1727e1308/8856289471885072053;o=1","x-forwarded-for":"35.212.182.149, 34.117.33.233, 35.191.2.83,35.193.50.36","x-forwarded-host":"cphelp.replit.app","x-forwarded-proto":"https","x-replit-user-bio":"","x-replit-user-id":"","x-replit-user-name":"","x-replit-user-profile-image":"","x-replit-user-roles":"","x-replit-user-teams":"","x-replit-user-url":""}
+2025-05-02 08:53:41.81
+7fb03349
+User
+Available webhook fields:
+2025-05-02 08:53:41.81
+7fb03349
+User
+Sender: not found
+2025-05-02 08:53:41.81
+7fb03349
+User
+Recipient: not found
+2025-05-02 08:53:41.81
+7fb03349
+User
+Subject: not found
+2025-05-02 08:53:41.81
+7fb03349
+User
+Message-ID: not found
+2025-05-02 08:53:41.81
+7fb03349
+User
+Content indicators: { hasBodyPlain: false, hasStrippedText: false, hasBodyHtml: false }
+2025-05-02 08:53:41.81
+7fb03349
+User
+Attachment data: {
+2025-05-02 08:53:41.81
+7fb03349
+User
+attachments: undefined,
+2025-05-02 08:53:41.81
+7fb03349
+User
+attachmentCount: undefined,
+2025-05-02 08:53:41.81
+7fb03349
+User
+hasAttachmentField: false,
+2025-05-02 08:53:41.81
+7fb03349
+User
+isAttachmentArray: false,
+2025-05-02 08:53:41.81
+7fb03349
+User
+attachmentLength: 'N/A'
+2025-05-02 08:53:41.81
+7fb03349
+User
+}
+2025-05-02 08:53:41.81
+7fb03349
+User
+Body preview: {}...
+2025-05-02 08:53:41.81
+7fb03349
+User
+Timestamp: 2025-05-02T03:23:41.813Z
+2025-05-02 08:53:41.81
+7fb03349
+User
+===========================================
+2025-05-02 08:53:41.81
+7fb03349
+User
+[ma68bvqt24f] PROCESSING EMAIL from Mailgun webhook
+2025-05-02 08:53:41.81
+7fb03349
+User
+FULL WEBHOOK BODY: {}

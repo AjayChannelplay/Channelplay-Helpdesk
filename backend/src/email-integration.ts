@@ -1,0 +1,190 @@
+/**
+ * Email Integration Module
+ * 
+ * This file provides a unified API for sending emails, automatically choosing
+ * between direct SMTP and Mailgun based on availability and success.
+ */
+
+import { Express } from 'express';
+import { smtpService } from './smtp';
+import { imapService } from './imap';
+import { emailService } from './email';
+import { 
+  configureEmailServices,
+  sendEmail as sendDirectEmail,
+  sendTicketReply as sendDirectTicketReply
+} from './direct-email-integration';
+import { formatEmailAddress, EMAIL_DOMAIN } from './config';
+
+// Track email delivery method preference
+let preferDirectEmail = true;
+
+/**
+ * Initialize email services
+ */
+export function initializeEmailServices(): void {
+  // Try to configure direct email services from environment
+  configureEmailServices();
+  
+  // Set initial preference based on configuration
+  preferDirectEmail = smtpService.getStatus().configured;
+  
+  console.log(`Email service initialized: ${emailService.getStatus().initialized}`);
+  console.log(`Using direct email as primary: ${preferDirectEmail}`);
+}
+
+/**
+ * Send a ticket reply with proper threading
+ * Will try direct SMTP first, then fall back to Mailgun if needed
+ */
+export async function sendTicketReply({
+  deskName,
+  deskEmail,
+  to,
+  cc = [],
+  subject,
+  text,
+  html,
+  attachments = [],
+  ticketId,
+  inReplyTo,
+  references = []
+}: {
+  deskName: string;
+  deskEmail: string;
+  to: string | string[];
+  cc?: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+  attachments?: any[];
+  ticketId: number;
+  inReplyTo?: string;
+  references?: string[];
+}): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  console.log('Sending ticket reply via preferred method...');
+  console.log(`Primary delivery method: ${preferDirectEmail ? 'Direct SMTP' : 'Mailgun'}`);
+  
+  try {
+    // Create from address - use the full desk email
+    let from;
+    if (deskEmail && deskEmail.includes('@')) {
+      from = `${deskName} <${deskEmail}>`;
+    } else {
+      // Fallback to domain if needed, but prefer complete addresses
+      from = `${deskName} <${deskEmail}${EMAIL_DOMAIN ? '@' + EMAIL_DOMAIN : ''}>`;
+    }
+    console.log(`From address: ${from}`);
+    
+    // Only use direct SMTP - no fallback to Mailgun
+    console.log('Attempting to send via direct SMTP...');
+    
+    const result = await sendDirectTicketReply({
+      deskName,
+      deskEmail,
+      to,
+      cc,
+      subject,
+      text,
+      html,
+      attachments,
+      ticketId,
+      inReplyTo,
+      references
+    });
+    
+    console.log('Direct SMTP email result:', result.success ? 'Success' : 'Failed');
+    return result;
+  } catch (error: any) {
+    console.error('Error sending ticket reply:', error);
+    return {
+      success: false,
+      error: error.message || 'Unknown error sending ticket reply'
+    };
+  }
+}
+
+/**
+ * Send an email notification
+ * Will try direct SMTP first, then fall back to Mailgun if needed
+ */
+export async function sendEmail({
+  from,
+  fromName,
+  to,
+  cc,
+  subject,
+  text,
+  html,
+  attachments
+}: {
+  from?: string;
+  fromName?: string;
+  to: string | string[];
+  cc?: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+  attachments?: any[];
+}): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  console.log('Sending notification email via preferred method...');
+  console.log(`Primary delivery method: ${preferDirectEmail ? 'Direct SMTP' : 'Mailgun'}`);
+  
+  try {
+    // Only use direct SMTP - no fallback to Mailgun
+    console.log('Sending email using direct SMTP only...');
+    
+    const result = await sendDirectEmail({
+      from,
+      fromName,
+      to,
+      cc,
+      subject,
+      text,
+      html,
+      attachments
+    });
+    
+    console.log('Direct SMTP email result:', result.success ? 'Success' : 'Failed');
+    return result;
+  } catch (error: any) {
+    console.error('Error sending email:', error);
+    return {
+      success: false,
+      error: error.message || 'Unknown error sending email'
+    };
+  }
+}
+
+/**
+ * Check the status of email services
+ */
+export function checkEmailServices(): { 
+  directEmailConfigured: boolean; 
+  directEmailStatus: any;
+  preferredMethod: string;
+} {
+  const directEmailStatus = emailService.getStatus();
+  
+  return {
+    directEmailConfigured: directEmailStatus.smtpConfigured,
+    directEmailStatus,
+    preferredMethod: preferDirectEmail ? 'Direct SMTP' : 'Mailgun'
+  };
+}
+
+/**
+ * Register API routes for email service management
+ */
+export function registerEmailRoutes(app: Express): void {
+  // Add API endpoint to check email service status
+  app.get('/api/email/status', (req: any, res: any) => {
+    const status = {
+      smtp: smtpService.getStatus(),
+      imap: imapService.getStatus(),
+      email: emailService.getStatus()
+    };
+    
+    res.json(status);
+  });
+}

@@ -1,0 +1,52 @@
+2025-05-02 09:36:31.23
+d315f755
+User
+Form fields: {"X-Gm-Features":"ATxdqUGrlZvcHwu44I6W4k7wr9e38rdYvhT4uMFG3JgNNvFXVSmmZuIJFE5jOIg","body-html":"<div dir=\"ltr\">good 1</div>\r\n","recipient":"tech@mail.desks.chat","subject":"good","X-Google-Smtp-Source":"AGHT+IGWcXkd9d39kwejWIUkxXMJninc/GpjibRG0zPmUcqNzi1RCQD8gOe3yrcp1GWS4IHQ+IFLRUCSY49H51En1Y0=","From":"Ajay Kumar <ajaykumar23aps@gmail.com>","Date":"Fri, 2 May 2025 09:36:15 +0530","To":"tech <tech@mail.desks.chat>","from":"Ajay Kumar <ajaykumar23aps@gmail.com>","X-Envelope-From":"ajaykumar23aps@gmail.com","Received":"by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-43d04ea9d9aso6604665e9.3 for <tech@mail.desks.chat>; Thu, 01 May 2025 21:06:28 -0700 (PDT)","X-Google-Dkim-Signature":"v=1; a=rsa-sha256; c=relaxed/relaxed; d=1e100.net; s=20230601; t=1746158788; x=1746763588; h=to:subject:message-id:date:from:mime-version:x-gm-message-state :from:to:cc:subject:date:message-id:reply-to; bh=+YNkU3BNcQ7/LmFxOWWYQ/znCNZLJyHExlOtqaUm4XY=; b=Is/W+BEu0z4Ek7KOEpD9TeoKJFRRiLm0Bv2rDDn6IPDcmCirC5bvDWuv+YTOAAYqh/ HHZNf/hOH02b2Em4cltDCHgie1yf1zrPXVMi9JUAsXmAVeryzi+coPENk97fBi1xCjMK mOcxVVTbYem3+UohSf8DJkQTTfEb33On6ar1NICf/IK0I8hMSPkhlYMlQZ9ltbXB7981 8UXRPpEdER/kPny/w58ihX7xAQgTegoHh4lPHr8CsoHIOwE01rsml6oFlL1nJFTvExCf 4hzTT1CiDVB+7p67uyV60iWF1Wg3zz5kEH8kSUgh30r4MWULUHE8WmMXd88S2P3gveFe b5MQ==","X-Gm-Message-State":"AOJu0Yw6uaptisddSbm3iVcnF9k0cCCBnjLhpu8/0JyDhE+ysBeVLmqU /jDJ18bP/JQe/7AKZVAn2nnTEm7m5pzcuN5uMmwl2VbnfJznoyz+8CXHBsjqmmOraQuVnU/7gBu MsV/7iUVyOPIb1dl/QxMNnHdf4pbYxcMt","Message-Id":"<CANWvrePgcX6UGPQTr7jEVj_u7f9+a3HqjdNDCnMy1Q+0UVg8Cg@mail.gmail.com>","Subject":"good","Content-Type":"multipart/mixed; boundary=\"00000000000039de7c06341f46c1\"","sender":"ajaykumar23aps@gmail.com","X-Mailgun-Incoming":"Yes","Dkim-Signature":"v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20230601; t=1746158788; x=1746763588; darn=mail.desks.chat; h=to:subject:message-id:date:from:mime-version:from:to:cc:subject :date:message-id:reply-to; bh=+YNkU3BNcQ7/LmFxOWWYQ/znCNZLJyHExlOtqaUm4XY=; b=nk/qrmKL6QuVv+1+08WI48SHc0L9ZoeaCSFS3jqX5n6uAMxMCmdEq8NmRK0n/FMf52 m/cpJjkFE1KvUmWM9p7TiLVgnmsfjvi/t5oGeV7MyAQWAdRN4pPlKjUSGoWnMdWjLtI8 NI2vzEtqMiu3wWjvlErJRPKh7fgjlEHdl8++zMR53y8mXKHBQmORrjsAQJQm4UeEEnRy 7T+82mX8iINPx0C92ww2B9m4E5l32dOcOW6v00FswfnBfHBIqjpiAfEcVG8l2t6AptnC LDCpFGjIcL65lmrcBtTLkbFRCw71nz7YH9H4M3okeL7xzz64KYu88gKfyP4Rmi8p1vdV DhZA==","X-Gm-Gg":"ASbGncvmP7f8UTBi4sRcXE2cJZgs9YaewxW+ZgiSFNPOMmpJQ9yE5W0KdRWbxlwuLzP mEFXiHw8ZVDoH/zns2BoZuemm4Q3bQAQ/qMelNZdVqwf1Xk1tV5WEECwlKkr8dERpgJC3ZYmMuJ S5hFCASs1IZ/AWEUdP2EVGd8d9Nvym7h++S4AGDMxFcwGz13nU4NwUSjjqU30tZS5zlw0=","X-Received":"by 2002:a05:600c:1c9e:b0:43c:f689:dd with SMTP id 5b1f17b1804b1-441bbec400cmr6630785e9.19.1746158787083; Thu, 01 May 2025 21:06:27 -0700 (PDT)","Mime-Version":"1.0","message-headers":"[[\"X-Mailgun-Incoming\",\"Yes\"],[\"X-Envelope-From\",\"ajaykumar23aps@gmail.com\"],[\"Received\",\"from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46]) by 2b7056c6843e with SMTP id <undefined> (version=TLS1.3, cipher=TLS_AES_128_GCM_SHA256); Fri, 02 May 2025 04:06:30 GMT\"],[\"Received\",\"by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-43d04ea9d9aso6604665e9.3 for <tech@mail.desks.chat>; Thu, 01 May 2025 21:06:28 -0700 (PDT)\"],[\"Dkim-Signature\",\"v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20230601; t=1746158788; x=1746763588; darn=mail.desks.chat; h=to:subject:message-id:date:from:mime-version:from:to:cc:subject :date:message-id:reply-to; bh=+YNkU3BNcQ7/LmFxOWWYQ/znCNZLJyHExlOtqaUm4XY=; b=nk/qrmKL6QuVv+1+08WI48SHc0L9ZoeaCSFS3jqX5n6uAMxMCmdEq8NmRK0n/FMf52 m/cpJjkFE1KvUmWM9p7TiLVgnmsfjvi/t5oGeV7MyAQWAdRN4pPlKjUSGoWnMdWjLtI8 NI2vzEtqMiu3wWjvlErJRPKh7fgjlEHdl8++zMR53y8mXKHBQmORrjsAQJQm4UeEEnRy 7T+82mX8iINPx0C92ww2B9m4E5l32dOcOW6v00FswfnBfHBIqjpiAfEcVG8l2t6AptnC LDCpFGjIcL65lmrcBtTLkbFRCw71nz7YH9H4M3okeL7xzz64KYu88gKfyP4Rmi8p1vdV DhZA==\"],[\"X-Google-Dkim-Signature\",\"v=1; a=rsa-sha256; c=relaxed/relaxed; d=1e100.net; s=20230601; t=1746158788; x=1746763588; h=to:subject:message-id:date:from:mime-version:x-gm-message-state :from:to:cc:subject:date:message-id:reply-to; bh=+YNkU3BNcQ7/LmFxOWWYQ/znCNZLJyHExlOtqaUm4XY=; b=Is/W+BEu0z4Ek7KOEpD9TeoKJFRRiLm0Bv2rDDn6IPDcmCirC5bvDWuv+YTOAAYqh/ HHZNf/hOH02b2Em4cltDCHgie1yf1zrPXVMi9JUAsXmAVeryzi+coPENk97fBi1xCjMK mOcxVVTbYem3+UohSf8DJkQTTfEb33On6ar1NICf/IK0I8hMSPkhlYMlQZ9ltbXB7981 8UXRPpEdER/kPny/w58ihX7xAQgTegoHh4lPHr8CsoHIOwE01rsml6oFlL1nJFTvExCf 4hzTT1CiDVB+7p67uyV60iWF1Wg3zz5kEH8kSUgh30r4MWULUHE8WmMXd88S2P3gveFe b5MQ==\"],[\"X-Gm-Message-State\",\"AOJu0Yw6uaptisddSbm3iVcnF9k0cCCBnjLhpu8/0JyDhE+ysBeVLmqU /jDJ18bP/JQe/7AKZVAn2nnTEm7m5pzcuN5uMmwl2VbnfJznoyz+8CXHBsjqmmOraQuVnU/7gBu MsV/7iUVyOPIb1dl/QxMNnHdf4pbYxcMt\"],[\"X-Gm-Gg\",\"ASbGncvmP7f8UTBi4sRcXE2cJZgs9YaewxW+ZgiSFNPOMmpJQ9yE5W0KdRWbxlwuLzP mEFXiHw8ZVDoH/zns2BoZuemm4Q3bQAQ/qMelNZdVqwf1Xk1tV5WEECwlKkr8dERpgJC3ZYmMuJ S5hFCASs1IZ/AWEUdP2EVGd8d9Nvym7h++S4AGDMxFcwGz13nU4NwUSjjqU30tZS5zlw0=\"],[\"X-Google-Smtp-Source\",\"AGHT+IGWcXkd9d39kwejWIUkxXMJninc/GpjibRG0zPmUcqNzi1RCQD8gOe3yrcp1GWS4IHQ+IFLRUCSY49H51En1Y0=\"],[\"X-Received\",\"by 2002:a05:600c:1c9e:b0:43c:f689:dd with SMTP id 5b1f17b1804b1-441bbec400cmr6630785e9.19.1746158787083; Thu, 01 May 2025 21:06:27 -0700 (PDT)\"],[\"Mime-Version\",\"1.0\"],[\"From\",\"Ajay Kumar <ajaykumar23aps@gmail.com>\"],[\"Date\",\"Fri, 2 May 2025 09:36:15 +0530\"],[\"X-Gm-Features\",\"ATxdqUGrlZvcHwu44I6W4k7wr9e38rdYvhT4uMFG3JgNNvFXVSmmZuIJFE5jOIg\"],[\"Message-Id\",\"<CANWvrePgcX6UGPQTr7jEVj_u7f9+a3HqjdNDCnMy1Q+0UVg8Cg@mail.gmail.com>\"],[\"Subject\",\"good\"],[\"To\",\"tech <tech@mail.desks.chat>\"],[\"Content-Type\",\"multipart/mixed; boundary=\\\"00000000000039de7c06341f46c1\\\"\"]]","body-plain":"good 1\r\n","attachment-count":"1","content-id-map":"{\"<f_ma69ufrl0>\":\"attachment-1\"}","stripped-text":"good 1","stripped-html":"<div dir=\"ltr\">good 1</div>\n","token":"aaae53e4f46c1fbe11ddd19485efa4109913db4d52884b4e7c","timestamp":"1746158790","signature":"d17f65a97361d9f5771dfea5c4794da266773af524051f13257dec25443e2a31"}
+2025-05-02 09:36:31.23
+d315f755
+User
+Sender: ajaykumar23aps@gmail.com
+2025-05-02 09:36:31.23
+d315f755
+User
+Recipient: tech@mail.desks.chat
+2025-05-02 09:36:31.23
+d315f755
+User
+Subject: good
+2025-05-02 09:36:31.23
+d315f755
+User
+Message-ID: <CANWvrePgcX6UGPQTr7jEVj_u7f9+a3HqjdNDCnMy1Q+0UVg8Cg@mail.gmail.com>
+2025-05-02 09:36:31.23
+d315f755
+User
+Content indicators: { hasBodyPlain: true, hasStrippedText: true, hasBodyHtml: true }
+2025-05-02 09:36:31.23
+d315f755
+User
+Attachment data: {
+2025-05-02 09:36:31.23
+d315f755
+User
+attachments: undefined,
+2025-05-02 09:36:31.23
+d315f755
+User
+attachmentCount: '1',
+2025-05-02 09:36:31.23
+d315f755
+User
+hasAttachmentField: false,
+2025-05-02 09:36:31.23
+d315f755
+User
+isAttachmentArray: false,
+2025-05-02 09:36:31.23
+d315f755
+User
+attachmentLength: 'N/A'
+2025-05-02 09:36:31.23
+d315f755
+User
+}

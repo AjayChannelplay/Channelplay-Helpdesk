@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulate Inbound Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            height: 150px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            display: none;
+        }
+        #error {
+            background-color: #ffebee;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simulate Mailgun Inbound Email</h1>
+    
+    <div class="container">
+        <h2>1. Simulate Direct Email to API Endpoint</h2>
+        <p>This form simulates sending an email directly to the API endpoint as if it's coming from Mailgun's webhook.</p>
+        
+        <form id="simulateForm">
+            <label for="from">From Email:</label>
+            <input type="email" id="from" name="from" value="customer@example.com" required>
+            
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" value="Help with my order" required>
+            
+            <label for="body">Email Body:</label>
+            <textarea id="body" name="body" required>Hello support team,
+
+I'm having an issue with my recent order (#12345). Can you please help me?
+
+Thanks,
+Customer</textarea>
+            
+            <label for="messageId">Message ID (Optional):</label>
+            <input type="text" id="messageId" name="messageId" value="">
+            
+            <button type="submit">Simulate Email</button>
+        </form>
+        
+        <div id="response" class="response">
+            <h3>Response:</h3>
+            <pre id="responseData"></pre>
+        </div>
+        
+        <div id="error" class="response">
+            <h3>Error:</h3>
+            <pre id="errorData"></pre>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>2. Use Built-in Test Tool</h2>
+        <p>The application has a built-in test tool for simulating incoming emails.</p>
+        <a href="/dashboard" target="_blank"><button>Go to Dashboard</button></a>
+    </div>
+
+    <script>
+        document.getElementById('simulateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fromEmail = document.getElementById('from').value;
+            const subject = document.getElementById('subject').value;
+            const body = document.getElementById('body').value;
+            const messageId = document.getElementById('messageId').value || `<mock-${Date.now()}@example.com>`;
+            
+            // Create a payload that mimics Mailgun's inbound webhook format
+            const payload = {
+                sender: fromEmail,
+                recipient: 'help@helpdesk.channelplay.in',
+                subject: subject,
+                body: body,
+                html: `<div>${body.replace(/\n/g, '<br>')}</div>`,
+                messageId: messageId,
+                timestamp: new Date().toISOString(),
+                headers: {
+                    'Message-ID': messageId
+                }
+            };
+            
+            try {
+                const response = await fetch('/api/inbound-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const responseData = await response.json();
+                
+                document.getElementById('responseData').textContent = JSON.stringify(responseData, null, 2);
+                document.getElementById('response').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                
+                // Check if ticket was created successfully
+                if (responseData.status === 'success') {
+                    alert('Success: ' + responseData.action + ' (Ticket ID: ' + responseData.ticketId + ')');
+                }
+            } catch (error) {
+                document.getElementById('errorData').textContent = error.toString();
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('response').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

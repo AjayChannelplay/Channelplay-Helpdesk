@@ -1,0 +1,96 @@
+import { QueryClient, QueryFunction } from "@tanstack/react-query";
+
+async function throwIfResNotOk(res: Response) {
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
+  }
+}
+
+export async function apiRequest(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<Response> {
+  const res = await fetch(url, {
+    method,
+    headers: data ? { "Content-Type": "application/json" } : {},
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
+
+  // Handle 401 Unauthorized - Session expired or not logged in
+  if (res.status === 401) {
+    console.warn("401 Unauthorized - Session expired or not logged in");
+    // For fixed credentials system - redirect to login page directly
+    window.location.href = '/auth';
+    throw new Error("401: Unauthorized - Your session has expired. Please log in again.");
+  }
+
+  // If HTTP status is 403, it means verification required
+  if (res.status === 403) {
+    const data = await res.json();
+    console.log("403 response data:", data);
+    
+    // Handle verification required scenario
+    if (data.userExists && data.username) {
+      // Store username in session storage for verification page
+      console.log('Storing username in session storage:', data.username);
+      sessionStorage.setItem('pendingVerification', data.username);
+      
+      // Throw a special error for the mutation to handle
+      throw new Error("Account verification required");
+    } else if (data.message && data.message.includes('verification')) {
+      // Generic verification error without specific username
+      throw new Error("Account verification required");
+    }
+  }
+  
+  if (!res.ok && res.status !== 403) {
+    // Handle other errors
+    await throwIfResNotOk(res);
+  }
+  
+  return res;
+}
+
+type UnauthorizedBehavior = "returnNull" | "throw" | "redirect";
+export const getQueryFn: <T>(options: {
+  on401: UnauthorizedBehavior;
+}) => QueryFunction<T> =
+  ({ on401: unauthorizedBehavior }) =>
+  async ({ queryKey }) => {
+    const res = await fetch(queryKey[0] as string, {
+      credentials: "include",
+    });
+
+    // Handle 401 based on behavior parameter
+    if (res.status === 401) {
+      if (unauthorizedBehavior === "returnNull") {
+        return null;
+      } else if (unauthorizedBehavior === "redirect") {
+        // For fixed credentials system - redirect to login page directly
+        window.location.href = '/auth';
+        return null;
+      }
+      // If "throw", continue to the throwIfResNotOk below
+    }
+
+    await throwIfResNotOk(res);
+    return await res.json();
+  };
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      queryFn: getQueryFn({ on401: "throw" }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
+      retry: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
