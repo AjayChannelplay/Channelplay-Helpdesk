@@ -6,7 +6,7 @@
  */
 
 import * as nodemailer from 'nodemailer';
-import { storage } from './storage';
+import { storage } from './services/storage';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 /**
