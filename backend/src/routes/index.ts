@@ -1,11 +1,11 @@
 import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupAuth, hashPassword, comparePasswords } from "./auth";
-import { mailgunService, isRecipientAuthorized } from "./mailgun";
-import { pool, db } from "./db";
-import { sendTicketReplyDirect } from "./email-direct";
-import { registerAdminRoutes } from "./admin-tools";
+import { storage } from "../services/storage";
+import { setupAuth, hashPassword, comparePasswords } from "../middleware/auth";
+import { mailgunService, isRecipientAuthorized } from "../mailgun";
+import { pool, db } from "../db";
+import { sendTicketReplyDirect } from "../email-direct";
+import { registerAdminRoutes } from "../admin-tools";
 import { z } from "zod";
 import { eq, and, between, gte, lte, sql, count, avg, isNull, not, desc, gt } from "drizzle-orm";
 import {
@@ -22,7 +22,7 @@ import {
 import path from "path";
 import fs from "fs/promises";
 import session from "express-session";
-import { upload, getFileInfo, getFilesInfo, AttachmentInfo } from "./uploads";
+import { upload, getFileInfo, getFilesInfo, AttachmentInfo } from "../uploads";
 import multer from "multer";
 import nodemailer from "nodemailer";
 
@@ -1162,6 +1162,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // USER MANAGEMENT ROUTES
+
+  // Get current authenticated user
+  app.get("/api/user", (req, res) => {
+    if (req.isAuthenticated()) {
+      // Return user info without sensitive data
+      const { password, resetToken, resetTokenExpiry, ...userInfo } = req.user as any;
+      return res.json(userInfo);
+    }
+    return res.status(401).json({ message: "Not authenticated" });
+  });
 
   // Get all users (admin only)
   app.get("/api/users", isAdmin, async (req, res) => {

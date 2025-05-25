@@ -7,12 +7,32 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Helper to get the base API URL
+const getApiBaseUrl = () => {
+  return import.meta.env.VITE_API_URL || 'http://localhost:3001';
+};
+
+// Helper to ensure URL has correct API base
+const getFullApiUrl = (url: string) => {
+  // If the URL already starts with http, assume it's a complete URL
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  // Make sure the URL starts with a slash
+  const formattedUrl = url.startsWith('/') ? url : `/${url}`;
+  return `${getApiBaseUrl()}${formattedUrl}`;
+};
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const fullUrl = getFullApiUrl(url);
+  console.log(`Making ${method} request to: ${fullUrl}`);
+  
+  const res = await fetch(fullUrl, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -60,7 +80,10 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = getFullApiUrl(queryKey[0] as string);
+    console.log(`Query fetching from: ${url}`);
+    
+    const res = await fetch(url, {
       credentials: "include",
     });
 

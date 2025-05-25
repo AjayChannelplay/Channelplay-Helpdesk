@@ -1,3 +1,7 @@
+// Load environment variables from .env file first
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -6,7 +10,7 @@ import morgan from 'morgan';
 import session from 'express-session';
 import passport from 'passport';
 import { registerRoutes } from './routes';
-import { configureAuth } from './middleware/auth';
+import { setupAuth } from './middleware/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,7 +21,30 @@ app.use(compression());
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if(!origin) return callback(null, true);
+    
+    // Define allowed origins
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      'http://localhost:5176'
+    ];
+    
+    // Add environment variable if it exists
+    if (process.env.FRONTEND_URL) {
+      allowedOrigins.push(process.env.FRONTEND_URL);
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked request from:', origin);
+      callback(null, false);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -45,7 +72,7 @@ app.use(session({
 // Authentication
 app.use(passport.initialize());
 app.use(passport.session());
-configureAuth();
+setupAuth(app);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -59,9 +86,13 @@ app.get('/health', (req, res) => {
 // API routes
 registerRoutes(app).then((server) => {
   console.log('🚀 Backend server starting...');
-  console.log(`📡 API available at: http://localhost:${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+  
+  // Actually start the server listening on the port
+  server.listen(PORT, () => {
+    console.log(`📡 API available at: http://localhost:${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+  });
 }).catch((error) => {
   console.error('❌ Failed to start server:', error);
   process.exit(1);

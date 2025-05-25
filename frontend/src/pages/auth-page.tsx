@@ -105,9 +105,16 @@ export default function AuthPage() {
   
   // For fixed credentials system - no verification checks needed
   
+  // Force the component to render completely - added for debugging
+  console.log('Rendering AuthPage with form:', { loginForm, isLoading, error });
+  
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-slate-50">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-slate-50" style={{ height: '100vh' }}>
       <div className="w-full max-w-md">
+        {/* Debug information */}
+        <div className="hidden">
+          Form state: {JSON.stringify({ isLoading, error })}
+        </div>
         {/* Logo Section */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 text-primary-600 mb-4">
@@ -117,6 +124,7 @@ export default function AuthPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-800">SupportDesk</h1>
           <p className="text-slate-500 mt-2">Customer service ticket management</p>
+          <p className="text-xs text-blue-500 mt-1">Debug: Form should appear below</p>
         </div>
         
         {/* Display error from URL parameter if any */}
@@ -175,6 +183,7 @@ export default function AuthPage() {
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Loading form...</span>
               </div>
             ) : (
               <Form {...loginForm}>

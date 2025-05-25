@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
-import { LoaderCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { apiRequest } from '@/lib/queryClient';
@@ -80,7 +80,7 @@ export default function ExternalAccessPage() {
           <div className="flex flex-col items-center justify-center text-center p-6">
             <div className="mb-6">
               {status === 'loading' && (
-                <LoaderCircle className="h-16 w-16 text-primary animate-spin" />
+                <Loader2 className="h-16 w-16 text-primary animate-spin" />
               )}
               {status === 'success' && (
                 <CheckCircle2 className="h-16 w-16 text-green-500" />

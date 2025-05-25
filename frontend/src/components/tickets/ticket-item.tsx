@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Ticket } from "@shared/schema";
+import { Ticket } from "../../shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { decodeSRSEmail, getInitials } from "@/lib/email-utils";
 

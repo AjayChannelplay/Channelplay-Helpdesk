@@ -2,7 +2,7 @@ import { users, type User, type InsertUser, tickets, type Ticket, type InsertTic
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcrypt";
-import { db, pool } from "./db";
+import { db, pool } from "../db";
 import { eq, desc, asc, or, inArray, sql } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);

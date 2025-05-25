@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/layout/navbar";
-import TicketList from "@/components/tickets/ticket-list";
+import { TicketList } from "@/components/tickets/ticket-list";
 import ConversationView from "@/components/tickets/conversation-view";
 import NewTicketForm from "@/components/tickets/new-ticket-form";
 import TestTools from "@/components/tickets/test-tools";

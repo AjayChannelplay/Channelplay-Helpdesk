@@ -7,7 +7,7 @@
 
 import { Express, Request, Response } from 'express';
 import { db } from './db';
-import { messages, tickets } from '../shared/schema';
+import { messages, tickets } from '@shared/schema';
 import { sql } from 'drizzle-orm';
 
 /**

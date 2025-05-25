@@ -3,9 +3,9 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import bcrypt from "bcrypt";
-import { storage } from "./storage";
+import { storage } from "../services/storage";
 import { User as SelectUser } from "@shared/schema";
-import { mailgunService } from "./mailgun";
+import { mailgunService } from "../mailgun";
 
 declare global {
   namespace Express {
