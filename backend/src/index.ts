@@ -37,6 +37,14 @@ app.use(cors({
     if (process.env.FRONTEND_URL) {
       allowedOrigins.push(process.env.FRONTEND_URL);
     }
+
+    // Add CORS_ALLOWED_ORIGINS if it exists (comma-separated list)
+    if (process.env.CORS_ALLOWED_ORIGINS) {
+      const corsOrigins = process.env.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
+      allowedOrigins.push(...corsOrigins);
+    }
+    
+    console.log('Allowed CORS origins:', allowedOrigins);
     
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
@@ -58,16 +66,30 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Session configuration
-app.use(session({
+const sessionConfig: express.SessionOptions = {
   secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'none' as const // Required for cross-domain cookies
   }
-}));
+};
+
+// If we have a cookie domain specified, set it
+if (process.env.SESSION_COOKIE_DOMAIN) {
+  (sessionConfig.cookie as any).domain = process.env.SESSION_COOKIE_DOMAIN;
+}
+
+console.log('Session cookie config:', {
+  secure: sessionConfig.cookie?.secure,
+  sameSite: sessionConfig.cookie?.sameSite,
+  domain: (sessionConfig.cookie as any).domain || 'not set'
+});
+
+app.use(session(sessionConfig));
 
 // Authentication
 app.use(passport.initialize());
