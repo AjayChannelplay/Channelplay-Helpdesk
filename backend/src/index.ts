@@ -7,7 +7,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import session from 'express-session';
+import session, { SessionOptions } from 'express-session';
 import passport from 'passport';
 import { registerRoutes } from './routes';
 import { setupAuth } from './middleware/auth';
@@ -66,7 +66,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Session configuration
-const sessionConfig: express.SessionOptions = {
+const sessionConfig: SessionOptions = {
   secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
