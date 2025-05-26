@@ -74,7 +74,10 @@ const sessionConfig: SessionOptions = {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none' as const // Required for cross-domain cookies
+    // Adjust sameSite based on environment
+    // For dev (HTTP, localhost different ports): 'lax' is needed because secure:false
+    // For prod (HTTPS): 'lax' is a good default. Use 'none' if truly cross-domain and secure:true.
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
   }
 };
 

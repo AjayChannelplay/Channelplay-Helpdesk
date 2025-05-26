@@ -1,7 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
-import session, { SessionOptions } from "express-session";
 import bcrypt from "bcrypt";
 import { storage } from "../services/storage";
 import { User as SelectUser } from "@shared/schema";
@@ -24,23 +23,6 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSettings: SessionOptions = {
-    secret: process.env.SESSION_SECRET || "support-desk-secret-key",
-    resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore,
-    cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax', // This helps with cross-site redirects
-      secure: process.env.NODE_ENV === 'production' // Only use secure in production
-    }
-  };
-
-  app.set("trust proxy", 1);
-  app.use(session(sessionSettings));
-  app.use(passport.initialize());
-  app.use(passport.session());
-
   passport.use(
     // Use type assertion to work around the passport type issue
     (new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
