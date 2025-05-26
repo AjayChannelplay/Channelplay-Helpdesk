@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "channelplay-helpdesk-api",
-      script: "./dist/index.js", // Path to your compiled TypeScript entry point
+      script: "./start.js", // Use start.js to handle path alias resolution
       instances: "max", // Use max instances for load balancing (based on available CPUs)
       exec_mode: "cluster", // Run in cluster mode for better performance
       watch: false, // Don't watch for file changes in production
