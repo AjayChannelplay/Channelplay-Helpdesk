@@ -42,7 +42,8 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
+    // Use type assertion to work around the passport type issue
+    (new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
       try {
         console.log(`Attempting login for email: ${email}`);
         const user = await storage.getUserByEmail(email);
@@ -73,7 +74,7 @@ export function setupAuth(app: Express) {
         console.error('Login error:', err);
         return done(err);
       }
-    }),
+    })) as passport.Strategy,
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
