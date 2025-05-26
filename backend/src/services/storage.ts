@@ -1,11 +1,12 @@
 import { users, type User, type InsertUser, tickets, type Ticket, type InsertTicket, messages, type Message, type InsertMessage, desks, type Desk, type InsertDesk, deskAssignments, type DeskAssignment, type InsertDeskAssignment } from "@shared/schema";
-import session from "express-session";
+import session, { SessionOptions, Store } from "express-session";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcrypt";
 import { db, pool } from "../db";
-import { eq, desc, asc, or, inArray, sql } from "drizzle-orm";
+import { and, eq, desc, asc, or, inArray, sql } from "drizzle-orm";
 
-const PostgresSessionStore = connectPg(session);
+// Create a properly typed session store
+const PostgresSessionStore = connectPg(session as any);
 
 export interface IStorage {
   // User management
@@ -68,13 +69,13 @@ export interface IStorage {
   getMessagesByExactId(messageId: string): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   
-  sessionStore: session.Store;
+  sessionStore: Store;
 }
 
 export class DatabaseStorage implements IStorage {
   // In-memory OTP cache for fallback when DB columns don't exist yet
   private _otpCache: {[userId: number]: {otp: string, expiry: Date}} = {};
-  sessionStore: session.Store;
+  sessionStore: Store;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -129,7 +130,7 @@ export class DatabaseStorage implements IStorage {
         try {
           await db.update(tickets)
             .set({ deskId: defaultDeskExists.id })
-            .where(eq(tickets.deskId, null));
+            .where(sql`${tickets.deskId} IS NULL`);
           console.log("Updated orphaned tickets to use the default desk");
         } catch (err) {
           console.error("Error updating orphaned tickets:", err);
@@ -562,14 +563,15 @@ export class DatabaseStorage implements IStorage {
         await client.query('COMMIT');
         
         console.log(`User deletion complete. Deleted user ${id} (${user.username}). Affected rows: ${result.rowCount}`);
-        return result.rowCount > 0;
+        return result.rowCount !== null && result.rowCount > 0;
       } catch (innerError) {
         // If any operation fails, roll back the transaction
         await client.query('ROLLBACK');
         console.error(`Error during user deletion transaction for user ${id}:`, innerError);
         
         // Log more specific errors based on error codes
-        if (innerError.code === '23503') {
+        const dbError = innerError as any;
+        if (dbError.code === '23503') {
           console.error(`Foreign key constraint violation. User ${id} has related data that prevents deletion.`);
         }
         
@@ -992,57 +994,27 @@ export class DatabaseStorage implements IStorage {
   }
   
   // This original method is intentionally left empty as it's replaced by the version at the end of the class
-  async getTickets(_deskId?: number): Promise<Ticket[]> {
-    return this.getTicketsByDesk(_deskId);
-  }
+  // This getTickets method is replaced by the implementation below
+  // to avoid duplicate function implementation
   
   async getTicketById(id: number): Promise<Ticket | undefined> {
     console.log(`DB: Getting ticket with ID: ${id}`);
     try {
-      const [ticket] = await db.select()
-        .from(tickets)
-        .where(eq(tickets.id, id));
-        
+      const [ticket] = await db.select().from(tickets).where(eq(tickets.id, id));
+      console.log(`DB: Found ticket:`, ticket);
+      
+      // Ensure ccRecipients is defined
       if (ticket) {
-        console.log(`DB: Found ticket ${id}: Subject: "${ticket.subject}", Status: ${ticket.status}, DeskId: ${ticket.deskId}, AssignedUserId: ${ticket.assignedUserId || 'none'}`);
-      } else {
-        console.log(`DB: No ticket found with ID ${id}`);
+        return {
+          ...ticket,
+          ccRecipients: ticket.ccRecipients || null
+        };
       }
       
       return ticket;
     } catch (error) {
-      console.error(`DB: Error fetching ticket ${id}:`, error);
-      
-      try {
-        // Try a more basic query without ORM
-        const { rows } = await pool.query(
-          `SELECT id, subject, status, customer_name, customer_email, 
-           created_at, updated_at, desk_id, assigned_user_id, resolved_at 
-           FROM tickets WHERE id = $1`, [id]
-        );
-        
-        if (rows.length === 0) {
-          return undefined;
-        }
-        
-        const row = rows[0];
-        // Convert to our expected format
-        return {
-          id: Number(row.id),
-          subject: String(row.subject),
-          status: String(row.status),
-          customerName: String(row.customer_name),
-          customerEmail: String(row.customer_email),
-          createdAt: new Date(String(row.created_at)),
-          updatedAt: new Date(String(row.updated_at)),
-          deskId: row.desk_id ? Number(row.desk_id) : null,
-          assignedUserId: row.assigned_user_id ? Number(row.assigned_user_id) : null,
-          resolvedAt: row.resolved_at ? new Date(String(row.resolved_at)) : null
-        };
-      } catch (fallbackError) {
-        console.error("Critical error fetching ticket by ID:", fallbackError);
-        return undefined;
-      }
+      console.error(`Error getting ticket with ID ${id}:`, error);
+      return undefined;
     }
   }
   
@@ -1090,7 +1062,8 @@ export class DatabaseStorage implements IStorage {
           ...insertTicket,
           status: insertTicket.status || 'open',
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          ccRecipients: insertTicket.ccRecipients || null
         })
         .returning();
       
@@ -1106,7 +1079,8 @@ export class DatabaseStorage implements IStorage {
           status: insertTicket.status || 'open',
           assignedUserId: null, // Explicitly remove any assignment that might have failed
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          ccRecipients: insertTicket.ccRecipients || null
         })
         .returning();
         
@@ -1216,7 +1190,7 @@ export class DatabaseStorage implements IStorage {
       
     return updatedTicket;
   }
-  
+
   async getMessagesByTicketId(ticketId: number): Promise<Message[]> {
     console.log(`[DB MESSAGES] Getting messages for ticket ID: ${ticketId}`);
     
@@ -1308,7 +1282,24 @@ export class DatabaseStorage implements IStorage {
         console.log(`[DB MESSAGES] No messages found for ticket ${ticketId}`);
       }
       
-      return messagesWithValidData;
+      // Ensure all required fields are present by creating a new object with all required fields
+      return messagesWithValidData.map(msg => ({
+        id: msg.id,
+        ticketId: msg.ticketId,
+        content: msg.content,
+        sender: msg.sender,
+        senderEmail: msg.senderEmail,
+        isAgent: msg.isAgent,
+        createdAt: msg.createdAt,
+        messageId: msg.messageId,
+        attachments: msg.attachments,
+        ccRecipients: msg.ccRecipients,
+        referenceIds: null,
+        inReplyTo: null,
+        isSatisfactionResponse: msg.isSatisfactionResponse || false,
+        satisfactionRating: msg.satisfactionRating || null,
+        emailSent: false
+      }));
     } catch (error) {
       console.error(`DB: Error fetching messages for ticket ${ticketId}:`, error);
       throw error;
@@ -1361,7 +1352,7 @@ export class DatabaseStorage implements IStorage {
             formattedMessage.attachments = [parsed];
           }
         } catch (e) {
-          console.warn(`Failed to parse attachments JSON string: ${e.message}`);
+          console.warn(`Failed to parse attachments JSON string: ${(e as Error).message}`);
           formattedMessage.attachments = [];
         }
       } else {
@@ -1397,7 +1388,8 @@ export class DatabaseStorage implements IStorage {
   async getDeskById(id: number): Promise<Desk | undefined> {
     try {
       const [desk] = await db.select().from(desks).where(eq(desks.id, id));
-      return desk;
+      // Add type assertion to satisfy TypeScript
+      return desk as Desk | undefined;
     } catch (error) {
       console.error(`Error getting desk by ID ${id}:`, error);
       return undefined;
@@ -1560,7 +1552,7 @@ export class DatabaseStorage implements IStorage {
   async getDeskAssignments(userId?: number, deskId?: number): Promise<DeskAssignment[]> {
     try {
       // Build SQL query with conditions - use the correct table name
-      let sqlQuery = 'SELECT * FROM user_desk_assignments';
+      let sqlQuery = 'SELECT * FROM desk_assignments';
       const params: any[] = [];
       const conditions: string[] = [];
       
@@ -1737,16 +1729,31 @@ export class DatabaseStorage implements IStorage {
       const query = `SELECT * FROM desks WHERE id IN (${placeholders})`;
       const { rows } = await pool.query(query, deskIds);
       
-      // Map the results to Desk objects
-      return rows.map(row => ({
+      // Map the results to Desk objects with all required fields
+      let desks = rows.map(row => ({
         id: Number(row.id),
         name: String(row.name),
         email: String(row.email),
         description: row.description ? String(row.description) : null,
         isDefault: Boolean(row.is_default),
         createdAt: new Date(String(row.created_at)),
-        updatedAt: new Date(String(row.updated_at))
+        updatedAt: new Date(String(row.updated_at)),
+        forwardingEmail: row.forwarding_email ? String(row.forwarding_email) : null,
+        smtpHost: row.smtp_host ? String(row.smtp_host) : null,
+        smtpPort: row.smtp_port ? String(row.smtp_port) : null,
+        smtpUser: row.smtp_user ? String(row.smtp_user) : null,
+        smtpPassword: row.smtp_password ? String(row.smtp_password) : null,
+        smtpSecure: row.smtp_secure !== undefined ? Boolean(row.smtp_secure) : null,
+        smtpFromName: row.smtp_from_name ? String(row.smtp_from_name) : null,
+        useDirectEmail: row.use_direct_email !== undefined ? Boolean(row.use_direct_email) : null,
+        imapHost: row.imap_host ? String(row.imap_host) : null,
+        imapPort: row.imap_port ? String(row.imap_port) : null,
+        imapUser: row.imap_user ? String(row.imap_user) : null,
+        imapPassword: row.imap_password ? String(row.imap_password) : null,
+        imapSecure: row.imap_secure !== undefined ? Boolean(row.imap_secure) : null,
+        useImapPolling: row.use_imap_polling !== undefined ? Boolean(row.use_imap_polling) : null
       }));
+      return desks;
     } catch (error) {
       console.error(`Error getting desks for user ${userId}:`, error);
       return [];
@@ -1776,9 +1783,30 @@ export class DatabaseStorage implements IStorage {
         console.log(`No assignments found for desk ${deskId}`);
         // If default desk, return all admin users
         if (desk.isDefault) {
-          console.log(`Desk ${deskId} is default, returning admin users`);
-          const adminUsers = await db.select().from(users).where(eq(users.role, 'admin'));
-          return adminUsers;
+          try {
+            console.log(`Desk ${deskId} is default, returning admin users`);
+            // Query directly from the database for admin users
+            const { rows: adminRows } = await pool.query("SELECT * FROM users WHERE role = 'admin'");
+            return adminRows.map(user => ({
+              id: Number(user.id),
+              username: String(user.username),
+              password: String(user.password),
+              name: String(user.name),
+              email: String(user.email),
+              role: String(user.role),
+              requiresSetup: user.requires_setup !== null ? Boolean(user.requires_setup) : null,
+              resetToken: user.reset_token || null,
+              resetTokenExpiry: user.reset_token_expiry ? new Date(String(user.reset_token_expiry)) : null,
+              isVerified: user.is_verified !== null ? Boolean(user.is_verified) : null,
+              createdAt: user.created_at ? new Date(String(user.created_at)) : new Date(),
+              updatedAt: user.updated_at ? new Date(String(user.updated_at)) : new Date(),
+              otpCode: user.otp_code || null,
+              otpExpiry: user.otp_expiry ? new Date(String(user.otp_expiry)) : null
+            }));
+          } catch (error) {
+            console.error('Error getting admin users:', error);
+            return [];
+          }
         } else {
           console.log(`Desk ${deskId} is not default, returning empty array`);
           return [];
@@ -1842,12 +1870,12 @@ export class DatabaseStorage implements IStorage {
       let query = db.select().from(tickets);
       
       // Apply filters
-      if (options?.deskId !== undefined) {
-        query = query.where(eq(tickets.deskId, options.deskId));
+      if (options?.deskId) {
+        query = query.where(eq(tickets.deskId, options.deskId)) as any;
       }
       
-      if (options?.status !== undefined) {
-        query = query.where(eq(tickets.status, options.status));
+      if (options?.status) {
+        query = query.where(eq(tickets.status, options.status)) as any;
       }
       
       // Apply sorting
@@ -1855,22 +1883,24 @@ export class DatabaseStorage implements IStorage {
         const sortField = options.sortBy as keyof typeof tickets;
         if (sortField && tickets[sortField]) {
           if (options.sortOrder === 'asc') {
-            query = query.orderBy(asc(tickets[sortField]));
+            const baseQuery = query.orderBy(asc(tickets[sortField as keyof typeof tickets] as any));
+            query = baseQuery as any;
           } else {
-            query = query.orderBy(desc(tickets[sortField]));
+            const baseQuery = query.orderBy(desc(tickets[sortField as keyof typeof tickets] as any));
+            query = baseQuery as any;
           }
         }
       } else {
         // Default sort by created date descending
-        query = query.orderBy(desc(tickets.createdAt));
+        query = query.orderBy(desc(tickets.createdAt)) as any;
       }
       
       // Apply pagination
       if (options?.limit !== undefined) {
-        query = query.limit(options.limit);
+        query = query.limit(options.limit) as any;
         
         if (options?.offset !== undefined) {
-          query = query.offset(options.offset);
+          query = query.offset(options.offset) as any;
         }
       }
       
@@ -1927,7 +1957,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         // Only include messages with non-null messageIds (they're the only ones useful for threading)
         // This significantly reduces the data load
-        messages.messageId.isNotNull()
+        sql`${messages.messageId} IS NOT NULL`
       )
       .orderBy(desc(messages.createdAt))
       .limit(1000); // Reduced limit for better performance
@@ -1953,7 +1983,14 @@ export class DatabaseStorage implements IStorage {
         
         console.log(`[DB MESSAGES] Retrieved ${rows.length} messages using raw query`);
         
+        // Add missing fields with appropriate default values
         return rows.map(row => ({
+          ccRecipients: null,
+          referenceIds: null,
+          inReplyTo: null,
+          isSatisfactionResponse: false,
+          satisfactionRating: null,
+          emailSent: false,
           id: Number(row.id),
           ticketId: Number(row.ticket_id),
           content: String(row.content || ''),
@@ -1963,7 +2000,7 @@ export class DatabaseStorage implements IStorage {
           createdAt: new Date(String(row.created_at)),
           messageId: row.message_id || null,
           attachments: this.parseJsonField(row.attachments, []),
-          ccRecipients: this.parseJsonField(row.cc_recipients, [])
+          // Removing duplicate ccRecipients field that will be populated elsewhere
         }));
       } catch (fallbackError) {
         console.error("[DB MESSAGES] Critical error in fallback query for all messages:", fallbackError);

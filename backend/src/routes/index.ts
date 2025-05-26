@@ -3017,7 +3017,7 @@ This is an automated message, please do not reply.`;
       
       // Create a clean count query without any potential corruption
       let cleanCountQuery = `SELECT COUNT(*) as total FROM tickets t WHERE 1=1`;
-      let cleanCountParams = [];
+      let cleanCountParams: any[] = [];
       
       // Rebuild the count query conditions cleanly
       if (sqlConditions.length > 0) {
@@ -4301,7 +4301,7 @@ This is an automated message, please do not reply.`;
           // Return the error to the client instead of silently continuing
           return res.status(500).json({ 
             message: "Failed to send email", 
-            error: emailError.message || "Unknown error"
+            error: emailError instanceof Error ? emailError.message : "Unknown error"
           });
         }
 
@@ -4320,10 +4320,10 @@ This is an automated message, please do not reply.`;
             .status(400)
             .json({ message: "Invalid message data", errors: error.errors });
         }
-        console.error("General error:", error.message || error);
+        console.error("General error:", error instanceof Error ? error.message : String(error));
         res.status(500).json({ 
           message: "Failed to create message", 
-          error: error.message || "Unknown error" 
+          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     },

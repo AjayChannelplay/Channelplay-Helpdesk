@@ -5,7 +5,7 @@
  * prioritizing Gmail SMTP settings for all outgoing messages.
  */
 
-import { storage } from './storage';
+import { storage } from './services/storage';
 
 // Configuration for preferred email sender
 const DEFAULT_GMAIL = 'ajaykumar23aps@gmail.com';

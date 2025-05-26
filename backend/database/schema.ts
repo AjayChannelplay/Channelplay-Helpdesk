@@ -198,17 +198,17 @@ export const insertMessageSchema = createInsertSchema(messages).pick({
 });
 
 // Define types
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
-export type InsertDesk = z.infer<typeof insertDeskSchema>;
+export type InsertDesk = typeof desks.$inferInsert;
 export type Desk = typeof desks.$inferSelect;
 
-export type InsertDeskAssignment = z.infer<typeof insertDeskAssignmentSchema>;
+export type InsertDeskAssignment = typeof deskAssignments.$inferInsert;
 export type DeskAssignment = typeof deskAssignments.$inferSelect;
 
+export type InsertTicket = typeof tickets.$inferInsert;
 export type Ticket = typeof tickets.$inferSelect;
-export type InsertTicket = z.infer<typeof insertTicketSchema>;
 
+export type InsertMessage = typeof messages.$inferInsert;
 export type Message = typeof messages.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;

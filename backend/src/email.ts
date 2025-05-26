@@ -6,8 +6,19 @@
  */
 
 import { smtpService } from './smtp';
-import { imapService } from './imap';
-import { SMTP_CONFIG, IMAP_CONFIG, EMAIL_DOMAIN, formatEmailAddress } from './config';
+// Create a mock imapService as the file was deleted
+const imapService = {
+  isConnected: () => false,
+  connect: async () => ({ success: false, error: 'IMAP service is disabled' }),
+  fetchUnreadEmails: async (callback: any) => {
+    console.log('IMAP service is disabled, cannot fetch emails');
+    return { success: false, error: 'IMAP service is disabled' };
+  },
+  markSeen: async () => false,
+  disconnect: () => {},
+  getStatus: () => ({ status: 'disconnected', error: 'IMAP service is disabled', configured: false })
+};
+import { SMTP_CONFIG, EMAIL_DOMAIN, formatEmailAddress } from './config';
 
 // Types for email polling
 type EmailHandler = (email: any) => Promise<void>;
@@ -216,7 +227,7 @@ class EmailService {
       
       return { 
         success: true, 
-        newEmails: emailCount || 0
+        newEmails: typeof emailCount === 'boolean' ? 0 : emailCount || 0
       };
     } catch (error: any) {
       console.error('Error in immediate email check:', error);
@@ -283,7 +294,7 @@ class EmailService {
    */
   private async pollEmails(): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      imapService.fetchUnreadEmails(async (emails) => {
+      imapService.fetchUnreadEmails(async (emails: any[]) => {
         try {
           if (emails.length === 0) {
             console.log('No new emails found');
@@ -319,7 +330,7 @@ class EmailService {
           console.error('Error processing emails:', error);
           reject(error);
         }
-      }).catch(error => {
+      }).catch((error: Error) => {
         console.error('Error fetching unread emails:', error);
         reject(error);
       });

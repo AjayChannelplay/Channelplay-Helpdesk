@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
-import session from "express-session";
+import session, { SessionOptions } from "express-session";
 import bcrypt from "bcrypt";
 import { storage } from "../services/storage";
 import { User as SelectUser } from "@shared/schema";
@@ -24,7 +24,7 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSettings: session.SessionOptions = {
+  const sessionSettings: SessionOptions = {
     secret: process.env.SESSION_SECRET || "support-desk-secret-key",
     resave: false,
     saveUninitialized: false,

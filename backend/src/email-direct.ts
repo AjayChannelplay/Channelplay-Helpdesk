@@ -6,7 +6,7 @@
  */
 
 import { sendDirectEmail } from './smtp-helper';
-import { storage } from './storage';
+import { storage } from './services/storage';
 
 /**
  * Generate a proper Message-ID that won't show "via helpdesk.1office.in"
@@ -128,8 +128,11 @@ export async function sendNewTicketEmailDirect({
       text,
       html: html || text.replace(/\n/g, '<br>'),
       headers,
-      attachments: [], // No attachments for automated confirmation emails
-      smtpConfig: {
+      attachments: [] // No attachments for automated confirmation emails
+    }, deskId);
+    
+    /* SMTP config is handled in the sendDirectEmail function
+    smtpConfig: {
         host: desk.smtpHost,
         port: parseInt(desk.smtpPort || '587'),
         secure: desk.smtpSecure,
@@ -138,7 +141,7 @@ export async function sendNewTicketEmailDirect({
           pass: desk.smtpPassword
         }
       }
-    });
+    */
     
     console.log(`✅ New ticket email sent successfully, messageId: ${result.messageId}`);
     

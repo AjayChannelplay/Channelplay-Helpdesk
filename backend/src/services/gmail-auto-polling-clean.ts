@@ -4,9 +4,13 @@
  * This service automatically checks each desk's IMAP for unread emails and creates tickets
  */
 
-import { fetchEmailsForDesk } from './imap-fetcher-working';
-import { db } from './db';
-import { desks } from '../shared/schema';
+// Mock implementation since imap-fetcher was removed
+const fetchEmailsForDesk = async (desk: any) => {
+  console.log(`[MOCK] Would fetch emails for desk ${desk.name} (ID: ${desk.id})`);
+  return { success: false, error: 'IMAP fetcher has been disabled' };
+};
+import { db } from '../db';
+import { desks } from '../../database/schema';
 import { eq } from 'drizzle-orm';
 
 let pollingIntervals: Map<number, NodeJS.Timeout> = new Map();
