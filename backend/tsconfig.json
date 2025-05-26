@@ -25,7 +25,7 @@
       "@/middleware/*": ["src/middleware/*"],
       "@/config/*": ["src/config/*"],
       "@/utils/*": ["src/utils/*"],
-      "@shared/schema": ["database/schema.ts"]
+      "@shared/schema": ["database/schema"]
     }
   },
   "include": [

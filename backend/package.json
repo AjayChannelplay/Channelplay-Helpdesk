@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "node build.js",
-    "start": "node dist/index.js",
+    "start": "node start.js",
     "start:prod": "pm2-runtime start ecosystem.config.js --env production",
     "deploy:prod": "pm2 deploy ecosystem.config.js production",
     "deploy:staging": "pm2 deploy ecosystem.config.js staging",
@@ -38,6 +38,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pg": "^8.11.3",
+    "tsconfig-paths": "^4.2.0",
     "uuid": "^9.0.1",
     "ws": "^8.18.2",
     "zod": "^3.22.4"
