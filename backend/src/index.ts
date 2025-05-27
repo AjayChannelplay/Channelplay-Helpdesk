@@ -13,14 +13,18 @@ import { registerRoutes } from './routes';
 import { setupAuth } from './middleware/auth';
 
 const app = express();
+// Tell Express we're behind a proxy (Nginx) - needed for secure cookies to work
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 
 // Security middleware
 app.use(helmet());
 app.use(compression());
 
-// CORS configuration - COMMENTED OUT SINCE NGINX HANDLES CORS
-/*
+// CORS Configuration - Environment-aware approach
+// In development: Express handles CORS
+// In production: Nginx handles CORS (Express CORS disabled)
+
 // Helper function to log CORS diagnostics
 function logCorsInfo(message: string, data: any) {
   console.log(`CORS: ${message}`, JSON.stringify(data));
@@ -29,10 +33,12 @@ function logCorsInfo(message: string, data: any) {
 // CRITICAL: We'll explicitly track which origins we have in our env vars to help debug
 const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.trim() : null;
 const corsAllowedOriginsEnv = process.env.CORS_ALLOWED_ORIGINS || '';
+const isProduction = process.env.NODE_ENV === 'production';
 
 logCorsInfo('Environment variables', {
   FRONTEND_URL: frontendUrl || 'not set',
-  CORS_ALLOWED_ORIGINS: corsAllowedOriginsEnv || 'not set'
+  CORS_ALLOWED_ORIGINS: corsAllowedOriginsEnv || 'not set',
+  NODE_ENV: process.env.NODE_ENV || 'not set'
 });
 
 // Pre-compute allowed origins to ensure no duplicates
@@ -62,32 +68,35 @@ if (corsAllowedOriginsEnv) {
 const allowedOrigins = Array.from(allowedOriginsSet);
 logCorsInfo('Final allowed origins', allowedOrigins);
 
-// Simple CORS configuration with validated allowed origins
-app.use(cors({
-  origin: function(requestOrigin, callback) {
-    // Allow requests with no origin
-    if (!requestOrigin) {
-      return callback(null, true);
-    }
-    
-    logCorsInfo('Request received from origin', requestOrigin);
-    
-    // Check if the request origin is in our allowed list
-    if (allowedOrigins.includes(requestOrigin)) {
-      // Critical: We return the EXACT origin that was requested
-      callback(null, requestOrigin);
-    } else {
-      console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
-      callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-*/
-
-console.log('CORS handling disabled in Express - using Nginx CORS headers instead.');
+// Only use Express CORS middleware in development
+// In production, Nginx handles CORS
+if (!isProduction) {
+  console.log('Development environment: Using Express CORS middleware');
+  app.use(cors({
+    origin: function(requestOrigin, callback) {
+      // Allow requests with no origin
+      if (!requestOrigin) {
+        return callback(null, true);
+      }
+      
+      logCorsInfo('Request received from origin', requestOrigin);
+      
+      // Check if the request origin is in our allowed list
+      if (allowedOrigins.includes(requestOrigin)) {
+        // Critical: We return the EXACT origin that was requested
+        callback(null, requestOrigin);
+      } else {
+        console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
+        callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  }));
+} else {
+  console.log('Production environment: CORS handling disabled in Express - using Nginx CORS headers instead.');
+}
 
 // Logging
 app.use(morgan('combined'));
@@ -102,12 +111,11 @@ const sessionConfig: SessionOptions = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    // Always set secure to true in production for HTTPS
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
+    // Always use secure and SameSite=None for cross-domain cookies
+    secure: true,         // ✅ Required for cross-origin cookies with SameSite=None
+    httpOnly: true,       // ✅ Security best practice
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    // Critical for cross-domain authentication - FORCE to 'none' in production for cross-domain
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: 'none',     // ✅ Required for cross-domain cookies (CloudFront to API domain)
   }
 };
 
@@ -132,13 +140,22 @@ if (process.env.NODE_ENV === 'production') {
   sessionConfig.cookie!.sameSite = 'none';
 }
 
-console.log('Session cookie config:', {
+// Add detailed session cookie logging
+console.log('🍪 Session cookie config:', {
   secure: sessionConfig.cookie?.secure,
   sameSite: sessionConfig.cookie?.sameSite,
   domain: (sessionConfig.cookie as any).domain || 'not set',
   httpOnly: sessionConfig.cookie?.httpOnly,
   maxAge: sessionConfig.cookie?.maxAge,
-  environment: process.env.NODE_ENV || 'not set'
+  environment: process.env.NODE_ENV || 'not set',
+  trustProxy: app.get('trust proxy')
+});
+
+// Log detailed express config
+console.log('📱 Express config:', {
+  trustProxy: app.get('trust proxy'),
+  environment: process.env.NODE_ENV || 'development',
+  behindProxy: true
 });
 
 app.use(session(sessionConfig));

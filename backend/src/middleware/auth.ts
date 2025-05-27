@@ -137,10 +137,35 @@ export function setupAuth(app: Express) {
       req.login(user, (err: Error | null) => {
         if (err) return next(err);
         
+        // Log cookie debug information
         console.log(`User ${user.username} logged in successfully - bypassed verification`);
+        
+        // Debug session and cookies
+        console.log('🔑 LOGIN SESSION DEBUG:');
+        console.log('Session ID:', req.sessionID);
+        console.log('Session Cookie:', req.session?.cookie);
+        console.log('Response Headers to be sent:', res.getHeaders());
+        
+        // Add cookie debug information to the response for frontend inspection
+        const cookieOptions = req.session?.cookie || {};
+        
         // Remove password from the response
         const { password, ...userWithoutPassword } = user;
-        return res.status(200).json(userWithoutPassword);
+        
+        // Log the user's successful login
+        console.log(`🔓 Authentication successful for ${user.email} with session ID ${req.sessionID}`);
+        console.log(`Cookie settings: secure=${cookieOptions.secure}, sameSite=${cookieOptions.sameSite}, httpOnly=${cookieOptions.httpOnly}`);
+        
+        return res.status(200).json({
+          ...userWithoutPassword,
+          _debug: {
+            sessionID: req.sessionID,
+            cookieSecure: cookieOptions.secure,
+            cookieSameSite: cookieOptions.sameSite,
+            cookieHttpOnly: cookieOptions.httpOnly,
+            cookieDomain: (cookieOptions as any).domain || 'not set'
+          }
+        });
       });
     })(req, res, next);
   });
