@@ -19,51 +19,64 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 app.use(compression());
 
-// CORS configuration
+// CORS configuration - FIXED VERSION TO AVOID DUPLICATES
+// Helper function to log CORS diagnostics
+function logCorsInfo(message: string, data: any) {
+  console.log(`CORS: ${message}`, JSON.stringify(data));
+}
+
+// CRITICAL: We'll explicitly track which origins we have in our env vars to help debug
+const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.trim() : null;
+const corsAllowedOriginsEnv = process.env.CORS_ALLOWED_ORIGINS || '';
+
+logCorsInfo('Environment variables', {
+  FRONTEND_URL: frontendUrl || 'not set',
+  CORS_ALLOWED_ORIGINS: corsAllowedOriginsEnv || 'not set'
+});
+
+// Pre-compute allowed origins to ensure no duplicates
+const allowedOriginsSet = new Set([
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176'
+]);
+
+// Add the frontend URL if it exists
+if (frontendUrl) {
+  allowedOriginsSet.add(frontendUrl);
+}
+
+// Add additional origins from CORS_ALLOWED_ORIGINS
+if (corsAllowedOriginsEnv) {
+  corsAllowedOriginsEnv.split(',').forEach(origin => {
+    const trimmedOrigin = origin.trim();
+    if (trimmedOrigin) {
+      allowedOriginsSet.add(trimmedOrigin);
+    }
+  });
+}
+
+// Convert Set to Array for easier usage
+const allowedOrigins = Array.from(allowedOriginsSet);
+logCorsInfo('Final allowed origins', allowedOrigins);
+
+// Simple CORS configuration with validated allowed origins
 app.use(cors({
   origin: function(requestOrigin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests, server-to-server)
-    // These are not subject to browser CORS policy in the same way.
+    // Allow requests with no origin
     if (!requestOrigin) {
-      return callback(null, true); // `true` allows the request. `cors` lib handles ACAO appropriately.
+      return callback(null, true);
     }
     
-    // Define base allowed origins (e.g., for local development)
-    const baseAllowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:5175',
-      'http://localhost:5176'
-    ];
+    logCorsInfo('Request received from origin', requestOrigin);
     
-    let dynamicAllowedOrigins = [...baseAllowedOrigins];
-    
-    // Add FRONTEND_URL from environment variables if it exists
-    if (process.env.FRONTEND_URL) {
-      dynamicAllowedOrigins.push(process.env.FRONTEND_URL.trim());
-    }
-
-    // Add CORS_ALLOWED_ORIGINS from environment variables if it exists (comma-separated list)
-    if (process.env.CORS_ALLOWED_ORIGINS) {
-      const corsEnvOrigins = process.env.CORS_ALLOWED_ORIGINS.split(',')
-        .map(origin => origin.trim())
-        .filter(origin => origin); // Filter out any empty strings from split
-      dynamicAllowedOrigins.push(...corsEnvOrigins);
-    }
-    
-    // Deduplicate the list of allowed origins
-    const finalAllowedOrigins = [...new Set(dynamicAllowedOrigins)];
-    
-    // For debugging purposes, you can log this on the server
-    // console.log('Request Origin:', requestOrigin);
-    // console.log('Effective Allowed CORS Origins:', finalAllowedOrigins);
-    
-    if (finalAllowedOrigins.includes(requestOrigin)) {
-      // If the requestOrigin is in our list, reflect it in the ACAO header
+    // Check if the request origin is in our allowed list
+    if (allowedOrigins.includes(requestOrigin)) {
+      // Critical: We return the EXACT origin that was requested
       callback(null, requestOrigin);
     } else {
-      // If the origin is not allowed
-      console.log(`CORS blocked request from: ${requestOrigin}. Not in allowed list: ${JSON.stringify(finalAllowedOrigins)}`);
+      console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
       callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
     }
   },
