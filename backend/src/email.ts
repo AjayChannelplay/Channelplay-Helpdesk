@@ -6,23 +6,227 @@
  */
 
 import { smtpService } from './smtp';
-// Create a mock imapService as the file was deleted
-const imapService = {
-  isConnected: () => false,
-  connect: async () => ({ success: false, error: 'IMAP service is disabled' }),
-  fetchUnreadEmails: async (callback: any) => {
-    console.log('IMAP service is disabled, cannot fetch emails');
-    return { success: false, error: 'IMAP service is disabled' };
-  },
-  markSeen: async () => false,
-  disconnect: () => {},
-  getStatus: () => ({ status: 'disconnected', error: 'IMAP service is disabled', configured: false })
-};
-import { SMTP_CONFIG, EMAIL_DOMAIN, formatEmailAddress } from './config';
+// Import the real IMAP service implementation
+import { imapService } from './imap-service';
+import { SMTP_CONFIG, EMAIL_DOMAIN, formatEmailAddress, isIMAPConfigured } from './config';
+import { db } from './db';
+import { tickets, messages, desks } from '../database/schema';
+import { nanoid } from 'nanoid';
+import { eq } from 'drizzle-orm';
 
 // Types for email polling
 type EmailHandler = (email: any) => Promise<void>;
 type EmailFilter = (email: any) => boolean;
+
+/**
+ * Create a ticket from an email
+ */
+// Import email threading utilities
+import { findRelatedTicket } from './email-threading';
+
+/**
+ * Create a ticket from an email, handling threading and MIME content properly
+ */
+export async function createTicketFromEmail(email: any, deskId: number) {
+  console.log(`Processing email: ${email.subject}`);
+  
+  try {
+    // Get the desk details
+    const desk = await db.query.desks.findFirst({
+      where: eq(desks.id, deskId)
+    });
+    
+    if (!desk) {
+      return { success: false, error: `Desk with ID ${deskId} not found` };
+    }
+    
+    // Extract email data with improved parsing
+    const subject = email.subject || '(No Subject)';
+    const senderEmail = email.from?.text || email.from?.value?.[0]?.address || '';
+    const senderName = email.from?.value?.[0]?.name || senderEmail.split('@')[0] || 'Unknown';
+    
+    // Better handling of multipart MIME content
+    // Prefer HTML content for rich formatting, but fall back to text
+    let content = '';
+    if (email.html) {
+      // Clean up HTML content to make it more readable
+      content = email.html;
+    } else if (email.text) {
+      // Convert plain text to simple HTML for consistent display
+      content = email.text.replace(/\n/g, '<br>');
+    }
+    
+    const messageId = email.messageId || nanoid();
+    const inReplyTo = email.inReplyTo || null;
+    const references = email.references || null;
+    
+    // Extract CC recipients if any
+    const ccRecipients = [];
+    if (email.cc?.text) {
+      ccRecipients.push(email.cc.text);
+    } else if (email.cc?.value && Array.isArray(email.cc.value)) {
+      email.cc.value.forEach((cc: any) => {
+        if (cc.address) ccRecipients.push(cc.address);
+      });
+    }
+    
+    // Check if this email has already been processed (avoid duplicates)
+    const existingMessage = await db.query.messages.findFirst({
+      where: eq(messages.messageId, messageId)
+    });
+    
+    if (existingMessage) {
+      console.log(`Email with message ID ${messageId} already processed as ticket #${existingMessage.ticketId}`);
+      return { success: true, ticketId: existingMessage.ticketId };
+    }
+    
+    // Enhanced check to find if this email is a reply to an existing thread
+    // Add debugging information to see the exact headers we're working with
+    console.log(`Email details for threading check:\n  Subject: "${subject}"\n  From: ${senderEmail}\n  Message-ID: ${messageId}\n  In-Reply-To: ${inReplyTo}\n  References: ${references}`);
+    
+    // DIRECT APPROACH: For Outlook emails, try a direct subject-based match first before using the complex threading logic
+    // This is a more reliable approach for emails from Outlook that often have non-standard threading headers
+    let relatedTicketId = null;
+    
+    // Clean the subject by removing Re:, Fwd:, etc. and extra whitespace
+    const cleanSubject = subject.replace(/^(re|fwd|fw|)\s*:\s*/i, '').trim();
+    
+    if (cleanSubject && cleanSubject.length > 3) {
+      // Try to find a ticket with a matching subject
+      console.log(`Performing direct subject match for: "${cleanSubject}"`);
+      
+      // First try an exact match on the clean subject
+      const exactMatches = await db.query.tickets.findMany({
+        where: (tickets, { eq, and, not }) => {
+          const conditions = [
+            eq(tickets.subject, cleanSubject)
+          ];
+          return and(...conditions);
+        },
+        orderBy: (tickets, { desc }) => [desc(tickets.updatedAt)],
+        limit: 5
+      });
+      
+      if (exactMatches.length > 0) {
+        console.log(`Found ${exactMatches.length} tickets with exact subject match`);
+        relatedTicketId = exactMatches[0].id;
+      } else {
+        // If no exact match, try to find a ticket where the subject contains the clean subject
+        // or the clean subject contains the ticket subject
+        const subjectMatches = await db.execute(
+          `SELECT id, subject FROM tickets 
+           WHERE LOWER(subject) LIKE LOWER('%${cleanSubject}%') 
+           OR LOWER('${cleanSubject}') LIKE LOWER(CONCAT('%', subject, '%')) 
+           ORDER BY updated_at DESC 
+           LIMIT 5`
+        );
+        
+        if (subjectMatches && Array.isArray(subjectMatches) && subjectMatches.length > 0) {
+          console.log(`Found ${subjectMatches.length} tickets with fuzzy subject match`);
+          relatedTicketId = subjectMatches[0].id;
+        }
+      }
+    }
+    
+    // If direct subject matching didn't find anything, fall back to the complex threading logic
+    if (!relatedTicketId) {
+      console.log('Direct subject matching failed, trying threading logic with headers');
+      relatedTicketId = await findRelatedTicket(
+        messageId,  // Message ID
+        references, // References header
+        inReplyTo,  // In-Reply-To header
+        subject,    // Actual email subject
+        senderEmail // Actual sender email
+      );
+    }
+    
+    if (relatedTicketId) {
+      console.log(`This email is a reply to existing ticket #${relatedTicketId}`);
+      
+      // Update the existing ticket's status and timestamp
+      await db.update(tickets)
+        .set({
+          status: 'open', // Reopen the ticket if it was closed
+          updatedAt: new Date()
+        })
+        .where(eq(tickets.id, relatedTicketId));
+      
+      // Create a new message in the existing ticket
+      const [newMessage] = await db.insert(messages).values({
+        ticketId: relatedTicketId,
+        content: content,
+        sender: senderName,
+        senderEmail: senderEmail,
+        isAgent: false,
+        messageId: messageId,
+        ccRecipients: ccRecipients,
+        createdAt: new Date(),
+        emailSent: false,
+        referenceIds: references,
+        inReplyTo: inReplyTo
+      }).returning();
+      
+      return { success: true, ticketId: relatedTicketId };
+    }
+    
+    // If not a reply, create a new ticket
+    const [newTicket] = await db.insert(tickets).values({
+      subject,
+      status: 'open',
+      customerName: senderName,
+      customerEmail: senderEmail,
+      deskId: deskId,
+      ccRecipients: ccRecipients,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    
+    if (!newTicket || !newTicket.id) {
+      throw new Error('Failed to create ticket record');
+    }
+    
+    // Create the message with full threading information
+    const [newMessage] = await db.insert(messages).values({
+      ticketId: newTicket.id,
+      content: content,
+      sender: senderName,
+      senderEmail: senderEmail,
+      isAgent: false,
+      messageId: messageId,
+      ccRecipients: ccRecipients,
+      createdAt: new Date(),
+      emailSent: false,
+      referenceIds: references,
+      inReplyTo: inReplyTo
+    }).returning();
+    
+    console.log(`Created ticket #${newTicket.id} from email`);
+    
+    // Handle attachments if any
+    if (email.attachments && email.attachments.length > 0) {
+      console.log(`Processing ${email.attachments.length} attachments for ticket #${newTicket.id}`);
+      // Format attachments for storage in the database
+      const attachmentsData = email.attachments.map((attachment: any) => ({
+        filename: attachment.filename,
+        contentType: attachment.contentType,
+        size: attachment.size,
+        // Store attachment content or path depending on your implementation
+        // You might want to save files to disk and store paths instead
+        content: attachment.content?.toString('base64')
+      }));
+      
+      // Update the message with attachments
+      await db.update(messages)
+        .set({ attachments: attachmentsData })
+        .where(eq(messages.id, newMessage.id));
+    }
+    
+    return { success: true, ticketId: newTicket.id };
+  } catch (error: any) {
+    console.error('Error creating ticket from email:', error);
+    return { success: false, error: `Error creating ticket: ${error.message}` };
+  }
+}
 
 class EmailService {
   private initialized: boolean = false;

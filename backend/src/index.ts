@@ -11,6 +11,7 @@ import session, { SessionOptions } from 'express-session';
 import passport from 'passport';
 import { registerRoutes } from './routes';
 import { setupAuth } from './middleware/auth';
+import { startGmailAutoPolling } from './services/gmail-auto-polling-clean';
 
 const app = express();
 // Tell Express we're behind a proxy (Nginx) - needed for secure cookies to work
@@ -111,11 +112,11 @@ const sessionConfig: SessionOptions = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    // Always use secure and SameSite=None for cross-domain cookies
-    secure: true,         // ✅ Required for cross-origin cookies with SameSite=None
+    // Use secure only in production, not in development (since localhost is HTTP)
+    secure: process.env.NODE_ENV === 'production',  // Only true in production
     httpOnly: true,       // ✅ Security best practice
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none',     // ✅ Required for cross-domain cookies (CloudFront to API domain)
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for production, 'lax' for development
   }
 };
 
@@ -183,6 +184,16 @@ registerRoutes(app).then((server) => {
     console.log(`📡 API available at: http://localhost:${PORT}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+    
+    // Initialize email auto-polling service
+    console.log('📧 Initializing email auto-polling service...');
+    startGmailAutoPolling()
+      .then(() => {
+        console.log('✅ Email auto-polling service initialized successfully');
+      })
+      .catch(error => {
+        console.error('❌ Failed to initialize email auto-polling service:', error);
+      });
   });
 }).catch((error) => {
   console.error('❌ Failed to start server:', error);

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, MessageCircle, ChevronDown, ChevronUp, Users, AlertCircle, RefreshCw } from "lucide-react";
+import { EmailContentRenderer } from "./email-content-renderer";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -650,16 +651,14 @@ function ConversationContent({
                     </div>
                   ) : (
                     <div className="p-4">
-                      {/* Message content - show full email thread as received */}
+                      {/* Message content - enhanced rendering with EmailContentRenderer */}
                       <div className="prose prose-sm max-w-none">
                         {message.content && typeof message.content === 'string' && message.content.trim() !== '' ? (
-                          // Show full email content as it was received
-                          <div className="text-sm text-slate-700">
-                            {/* Display the full content including thread history */}
-                            {message.content.split('\n').map((paragraph, idx) => (
-                              <p key={idx} className="mb-2">{paragraph || ' '}</p>
-                            ))}
-                          </div>
+                          // Use our enhanced EmailContentRenderer for better display
+                          <EmailContentRenderer 
+                            content={message.content} 
+                            isHtml={message.content.includes('<html') || message.content.includes('<body')} 
+                          />
                         ) : (
                           // Different placeholders based on attachments
                           <p className="text-sm text-slate-500">
@@ -855,7 +854,9 @@ export default function ConversationView({
   onReplySuccess,
   isMobileView
 }: ConversationViewProps) {
-  console.log(`ConversationView rendering with ticketId: ${ticketId}`);
+  // Ensure ticketId is properly converted to a number for API requests
+  const numericTicketId = ticketId ? Number(ticketId) : null;
+  console.log(`ConversationView rendering with ticketId: ${ticketId}`, typeof ticketId, "numeric:", numericTicketId, "valid number:", !isNaN(numericTicketId as number));
   
   // Fetch ticket and messages with enhanced configuration
   const { 
@@ -865,13 +866,39 @@ export default function ConversationView({
     error,
     refetch
   } = useQuery({
-    queryKey: [`/api/tickets/${ticketId}`],
-    queryFn: getQueryFn({ on401: "throw" }), // Explicitly set 401 behavior to throw errors
-    enabled: !!ticketId,
+    queryKey: [`/api/tickets/${numericTicketId}`],
+    // Use a properly typed queryFn implementation that handles numbers correctly
+    queryFn: () => {
+      if (!numericTicketId || isNaN(numericTicketId)) {
+        console.error(`Invalid ticket ID: ${numericTicketId}`);
+        throw new Error("Invalid ticket ID");
+      }
+      
+      const endpoint = `/api/tickets/${numericTicketId}`;
+      console.log(`Making API request to ${endpoint}`);
+      
+      // Direct fetch implementation to eliminate any possible issues with getQueryFn
+      return fetch(endpoint)
+        .then(response => {
+          if (!response.ok) {
+            console.error(`API request failed with status: ${response.status}`);
+            throw new Error(`API request failed with status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log(`API response received:`, data);
+          return data;
+        });
+    },
+
+    enabled: !!numericTicketId,
     retry: (failureCount, error) => {
-      // Don't retry on authentication errors
-      if (error.message?.includes('401') || error.message?.toLowerCase().includes('unauthorized')) {
-        console.warn('Auth error detected, not retrying');
+      // Don't retry on authentication errors or invalid ticket ID
+      if (error?.message?.includes('401') || 
+          error?.message?.toLowerCase().includes('unauthorized') ||
+          error?.message?.includes('Invalid ticket ID')) {
+        console.warn('Auth error or invalid ticket ID detected, not retrying');
         return false;
       }
       return failureCount < 2; // Otherwise retry up to 2 times
@@ -879,13 +906,16 @@ export default function ConversationView({
     retryDelay: 1000, // Wait 1 second between retries
     // Auto-refresh data every 15 seconds to show new replies automatically
     refetchInterval: 15000,
-    refetchIntervalInBackground: true
+    refetchIntervalInBackground: true,
+    // Make sure to refetch when the ticket ID changes
+    refetchOnWindowFocus: true,
+    refetchOnMount: true
   });
   
   // Add debug logs for API responses
   useEffect(() => {
     if (data) {
-      console.log(`Ticket data loaded successfully for ID ${ticketId}:`, data);
+      console.log(`Ticket data loaded successfully for ID ${numericTicketId}:`, data);
       const typedData = data as {ticket?: any, messages?: any[]};
       if (!typedData.ticket) {
         console.error("Missing ticket data in response");
@@ -893,13 +923,13 @@ export default function ConversationView({
       if (!typedData.messages) {
         console.error("Missing messages data in response");
       } else {
-        console.log(`Loaded ${typedData.messages.length} messages for ticket #${ticketId}`);
+        console.log(`Loaded ${typedData.messages.length} messages for ticket #${numericTicketId}`);
       }
     }
     if (error) {
-      console.error(`Error loading ticket data for ID ${ticketId}:`, error);
+      console.error(`Error loading ticket data for ID ${numericTicketId}:`, error);
     }
-  }, [data, error, ticketId]);
+  }, [data, error, numericTicketId]);
 
   // Empty state when no ticket is selected
   if (!ticketId) {

@@ -4,10 +4,85 @@
  * This service automatically checks each desk's IMAP for unread emails and creates tickets
  */
 
-// Mock implementation since imap-fetcher was removed
+import { imapService } from '../imap-service';
+import { createTicketFromEmail } from '../email';
+
+/**
+ * Fetch emails for a specific desk and create tickets from them
+ */
 const fetchEmailsForDesk = async (desk: any) => {
-  console.log(`[MOCK] Would fetch emails for desk ${desk.name} (ID: ${desk.id})`);
-  return { success: false, error: 'IMAP fetcher has been disabled' };
+  console.log(`Fetching emails for desk ${desk.name} (ID: ${desk.id})`);
+  
+  try {
+    // Configure IMAP service for this desk
+    const configured = imapService.configureForDesk(desk);
+    if (!configured) {
+      return { 
+        success: false, 
+        error: `IMAP configuration for desk ${desk.name} is incomplete` 
+      };
+    }
+    
+    // Connect to IMAP server
+    const connectResult = await imapService.connect();
+    if (!connectResult.success) {
+      return { 
+        success: false, 
+        error: `Failed to connect to IMAP server for desk ${desk.name}: ${connectResult.error}` 
+      };
+    }
+    
+    // Fetch and process unread emails
+    let newTicketsCount = 0;
+    const fetchResult = await imapService.fetchUnreadEmails(async (emails) => {
+      console.log(`Processing ${emails.length} new emails for desk ${desk.name}`);
+      
+      // Process each email
+      for (const email of emails) {
+        try {
+          // Create ticket from email
+          const ticketResult = await createTicketFromEmail(email, desk.id);
+          if (ticketResult.success) {
+            newTicketsCount++;
+            console.log(`Created new ticket #${ticketResult.ticketId} from email`);
+            
+            // Mark the email as seen if ticket was created successfully
+            if (email.uid) {
+              await imapService.markSeen([email.uid]);
+            }
+          } else {
+            console.error(`Failed to create ticket from email: ${ticketResult.error}`);
+          }
+        } catch (emailError) {
+          console.error('Error processing email:', emailError);
+        }
+      }
+    });
+    
+    // Disconnect from IMAP server
+    imapService.disconnect();
+    
+    if (!fetchResult.success) {
+      return { 
+        success: false, 
+        error: `Failed to fetch emails for desk ${desk.name}: ${fetchResult.error}` 
+      };
+    }
+    
+    return { 
+      success: true, 
+      newTickets: newTicketsCount 
+    };
+  } catch (error: any) {
+    console.error(`Error in fetchEmailsForDesk for desk ${desk.name}:`, error);
+    return { 
+      success: false, 
+      error: `Error fetching emails for desk ${desk.name}: ${error.message}` 
+    };
+  } finally {
+    // Ensure IMAP connection is closed even if an error occurs
+    imapService.disconnect();
+  }
 };
 import { db } from '../db';
 import { desks } from '../../database/schema';
@@ -79,15 +154,21 @@ function startDeskPolling(desk: any) {
 
 /**
  * Check for new emails for a specific desk
+ * @returns Result with success flag and number of new tickets
  */
-async function checkDeskForNewEmails(desk: any) {
+export async function checkDeskForNewEmails(desk: any) {
   console.log(`🔍 Checking emails for desk: ${desk.name} (${desk.imapUser})`);
   
   try {
-    await fetchEmailsForDesk(desk);
+    const result = await fetchEmailsForDesk(desk);
+    return result;
   } catch (error) {
     console.error(`Error fetching emails for desk ${desk.name}:`, error);
-    // Don't throw the error to prevent stopping other desk polling
+    // Return error result but don't throw to prevent stopping other desk polling
+    return { 
+      success: false, 
+      error: `Error checking emails for desk ${desk.name}: ${error instanceof Error ? error.message : String(error)}` 
+    };
   }
 }
 

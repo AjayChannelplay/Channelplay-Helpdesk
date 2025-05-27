@@ -110,14 +110,31 @@ export default function TicketItem({
     updateStatusMutation.mutate("open");
   };
   
+  // Add debug logging to the onSelect callback
+  const handleClick = (e: React.MouseEvent) => {
+    console.log('TicketItem clicked:', ticket.id);
+    // Stop event propagation to prevent any parent elements from catching the event
+    e.stopPropagation();
+    // Call the onSelect callback provided by the parent component
+    if (onSelect) {
+      console.log('Calling onSelect for ticket:', ticket.id);
+      onSelect();
+    } else {
+      console.warn('No onSelect callback provided for ticket:', ticket.id);
+    }
+  };
+  
   return (
     <div
       className={`border-b border-slate-200 cursor-pointer hover:bg-slate-50 transition ${
         isSelected ? "bg-blue-50 border-l-2 sm:border-l-4 border-primary-500" : ""
       }`}
-      onClick={onSelect}
+      onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      role="button"
+      tabIndex={0}
+      aria-selected={isSelected}
     >
       <div className="p-3 sm:p-4">
         <div className="flex justify-between items-start mb-2">

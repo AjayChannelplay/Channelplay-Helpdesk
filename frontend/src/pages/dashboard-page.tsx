@@ -23,8 +23,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, RefreshCw, Clock, SortAsc, SortDesc, ListFilter, Inbox, User as UserIcon } from "lucide-react";
-import { Ticket, Desk } from "@shared/schema";
+import { PlusCircle, RefreshCw, Clock, SortAsc, Inbox, User as UserIcon } from "lucide-react";
+import { Desk } from "@shared/schema";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function DashboardPage() {
@@ -35,14 +35,14 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<string>("desc");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [statusFilter] = useState<string | null>(null);
   // Default to null, will be set to the Default desk (id=1) once user desks are loaded
   const [deskFilter, setDeskFilter] = useState<number | null>(null);
   // Filter for assigned tickets: "all", "assigned", "unassigned", or a specific user ID
   const [assignmentFilter, setAssignmentFilter] = useState<string>("all");
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [perPage] = useState<number>(25);
+  const [perPage] = useState<number>(10); // Limit to exactly 10 tickets per page for better layout balance
   
   // Fetch user's desks
   const { data: userDesks = [] } = useQuery<Desk[]>({
@@ -130,11 +130,20 @@ export default function DashboardPage() {
       });
   
   const handleTicketSelect = (ticketId: number) => {
-    setSelectedTicketId(ticketId);
+    console.log('Dashboard: handleTicketSelect called with ID:', ticketId, typeof ticketId);
+    
+    // Ensure ticketId is a number
+    const numericTicketId = Number(ticketId);
+    console.log('Dashboard: converted numericTicketId:', numericTicketId);
+    
+    // Update state with the numeric ticket ID
+    setSelectedTicketId(numericTicketId);
+    console.log('Dashboard: Set selectedTicketId to:', numericTicketId);
     
     // Show conversation on mobile
     if (window.innerWidth < 768) {
       setShowMobileConversation(true);
+      console.log('Dashboard: Set showMobileConversation to true');
     }
   };
   
@@ -336,8 +345,8 @@ export default function DashboardPage() {
                 </DialogContent>
               </Dialog>
               
-              {/* Add Email Test Tools - Temporarily commented out */}
-              {/* <TestTools tickets={tickets} onSuccess={() => refetchTickets()} /> */}
+              {/* Add Email Test Tools for testing */}
+              <TestTools tickets={tickets} onSuccess={() => refetchTickets()} />
             </div>
           </div>
         </div>
@@ -346,7 +355,7 @@ export default function DashboardPage() {
       <main className="flex-1 w-full flex flex-col md:flex-row md:space-x-0 pt-4 sm:pt-6 px-2 sm:px-6 lg:px-8">
         {/* Left Panel - Tickets List (25% width) */}
         <div 
-          className={`w-full md:w-1/4 lg:w-1/4 md:flex-shrink-0 mb-4 md:mb-0 pr-4 ${
+          className={`w-full md:w-1/4 lg:w-1/4 md:flex-shrink-0 mb-4 md:mb-0 pr-4 h-[calc(100vh-10rem)] overflow-y-auto ${
             isMobileView && showMobileConversation ? 'hidden' : 'block'
           }`}
         >
@@ -365,7 +374,7 @@ export default function DashboardPage() {
         
         {/* Middle Panel - Conversation View (50% width) */}
         <div 
-          className={`w-full md:w-2/4 lg:w-2/4 ${
+          className={`w-full md:w-2/4 lg:w-2/4 h-[calc(100vh-10rem)] overflow-y-auto ${
             isMobileView && !showMobileConversation ? 'hidden' : 'block'
           }`}
         >

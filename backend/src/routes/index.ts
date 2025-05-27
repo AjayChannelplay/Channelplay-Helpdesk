@@ -5,6 +5,8 @@ import { setupAuth, hashPassword, comparePasswords } from "../middleware/auth";
 import { mailgunService, isRecipientAuthorized } from "../mailgun";
 import { pool, db } from "../db";
 import { sendTicketReplyDirect } from "../email-direct";
+import { emailService } from "../email";
+import { checkDeskForNewEmails } from "../services/gmail-auto-polling-clean";
 import { registerAdminRoutes } from "../admin-tools";
 import { z } from "zod";
 import { eq, and, between, gte, lte, sql, count, avg, isNull, not, desc, gt } from "drizzle-orm";
@@ -18,6 +20,7 @@ import {
   messages,
   tickets,
   users,
+  desks,
 } from "@shared/schema";
 import path from "path";
 import fs from "fs/promises";
@@ -4759,6 +4762,74 @@ This is an automated message, please do not reply.`;
     }
   });
 
+  // Endpoint for manual email polling and email service management
+  app.post("/api/email/polling", async (req, res) => {
+    try {
+      const action = req.body?.action;
+      
+      if (action === 'check_now') {
+        console.log('Manual email check requested');
+        
+        // Get all desks that have IMAP polling enabled
+        const pollingDesks = await db.query.desks.findMany({
+          where: eq(desks.useImapPolling, true)
+        });
+        
+        if (pollingDesks.length === 0) {
+          return res.status(200).json({
+            success: true,
+            newEmails: 0,
+            message: 'No desks with IMAP polling enabled'
+          });
+        }
+        
+        let totalNewEmails = 0;
+        
+        // Check each desk for new emails
+        for (const desk of pollingDesks) {
+          try {
+            const result = await checkDeskForNewEmails(desk);
+            if (result.success && result.newTickets) {
+              totalNewEmails += result.newTickets;
+            }
+          } catch (deskError) {
+            console.error(`Error checking desk ${desk.name}:`, deskError);
+          }
+        }
+        
+        return res.status(200).json({
+          success: true,
+          newEmails: totalNewEmails,
+          message: totalNewEmails > 0 ? `Found ${totalNewEmails} new emails` : 'No new emails found'
+        });
+      } else if (action === 'start_polling') {
+        const success = emailService.startPolling();
+        return res.status(200).json({
+          success,
+          message: success ? 'Email polling started' : 'Failed to start email polling'
+        });
+      } else if (action === 'stop_polling') {
+        const success = emailService.stopPolling();
+        return res.status(200).json({
+          success,
+          message: success ? 'Email polling stopped' : 'Email polling was not running'
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid action. Valid actions are: check_now, start_polling, stop_polling'
+        });
+      }
+    } catch (error: any) {
+      console.error('Error in email polling endpoint:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Server error during email polling operation',
+        error: error.message
+      });
+    }
+  });
+  
   // Route to check if an email is authorized for Mailgun sandbox domains
   app.get("/api/check-recipient", async (req, res) => {
     try {
