@@ -19,7 +19,8 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 app.use(compression());
 
-// CORS configuration - FIXED VERSION TO AVOID DUPLICATES
+// CORS configuration - COMMENTED OUT SINCE NGINX HANDLES CORS
+/*
 // Helper function to log CORS diagnostics
 function logCorsInfo(message: string, data: any) {
   console.log(`CORS: ${message}`, JSON.stringify(data));
@@ -84,6 +85,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+*/
+
+console.log('CORS handling disabled in Express - using Nginx CORS headers instead.');
 
 // Logging
 app.use(morgan('combined'));
