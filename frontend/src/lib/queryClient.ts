@@ -7,15 +7,8 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Helper to get the base API URL
-const getApiBaseUrl = () => {
-  // In development, use relative URLs to leverage Vite's proxy
-  if (import.meta.env.DEV) {
-    return '';
-  }
-  // In production, use the configured API URL or the correct production API
-  return import.meta.env.VITE_API_URL || 'https://api.channelplay.in';
-};
+// Define API base URL for production - single source of truth
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.channelplay.in';
 
 // Helper to ensure URL has correct API base
 const getFullApiUrl = (url: string) => {
@@ -32,9 +25,17 @@ const getFullApiUrl = (url: string) => {
     return formattedUrl.startsWith('/api') ? formattedUrl : `/api${formattedUrl}`;
   }
   
-  // For production, prepend the API base URL
-  const formattedUrl = url.startsWith('/') ? url : `/${url}`;
-  return `${getApiBaseUrl()}${formattedUrl}`;
+  // For production, ALWAYS use the direct API URL instead of relative paths
+  // This bypasses CloudFront routing issues
+  const apiBase = API_BASE_URL;
+  const apiPath = url.startsWith('/') ? url : `/${url}`;
+  
+  // Always remove /api prefix since we're directly hitting the API server
+  // This prevents duplicate "api" in URLs like https://api.channelplay.in/api/tickets
+  const cleanPath = apiPath.startsWith('/api') ? apiPath.substring(4) : apiPath;
+  const finalPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+  
+  return `${apiBase}${finalPath}`;
 };
 
 export async function apiRequest(
