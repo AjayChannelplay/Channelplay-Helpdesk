@@ -85,26 +85,43 @@ const sessionConfig: SessionOptions = {
   resave: false,
   saveUninitialized: false,
   cookie: {
+    // Always set secure to true in production for HTTPS
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    // Critical for cross-domain authentication
+    // Critical for cross-domain authentication - FORCE to 'none' in production for cross-domain
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    // Add domain for production to share cookies across subdomains
-    ...(process.env.NODE_ENV === 'production' && process.env.COOKIE_DOMAIN ? 
-      { domain: process.env.COOKIE_DOMAIN } : {})
   }
 };
 
-// If we have a cookie domain specified, set it
-if (process.env.SESSION_COOKIE_DOMAIN) {
-  (sessionConfig.cookie as any).domain = process.env.SESSION_COOKIE_DOMAIN;
+// IMPORTANT: For cross-domain cookies between completely different domains
+// (like CloudFront and api.channelplay.in), we should NOT set a domain
+// unless we're dealing with subdomains of the same parent domain.
+
+// Only set domain if explicitly requested AND we're using subdomains 
+// of the same parent domain
+if (process.env.NODE_ENV === 'production' && process.env.COOKIE_DOMAIN) {
+  // Only set this if CloudFront and API are on subdomains of the same parent domain
+  // For example, if both are on *.channelplay.in
+  console.log(`Setting cookie domain to: ${process.env.COOKIE_DOMAIN}`);
+  (sessionConfig.cookie as any).domain = process.env.COOKIE_DOMAIN;
+} else if (process.env.NODE_ENV === 'production') {
+  console.log('Cross-domain cookies: Not setting domain attribute for cross-domain cookie sharing');
+}
+
+// Extra safety: Force secure and sameSite in production regardless of env vars
+if (process.env.NODE_ENV === 'production') {
+  sessionConfig.cookie!.secure = true;
+  sessionConfig.cookie!.sameSite = 'none';
 }
 
 console.log('Session cookie config:', {
   secure: sessionConfig.cookie?.secure,
   sameSite: sessionConfig.cookie?.sameSite,
-  domain: (sessionConfig.cookie as any).domain || 'not set'
+  domain: (sessionConfig.cookie as any).domain || 'not set',
+  httpOnly: sessionConfig.cookie?.httpOnly,
+  maxAge: sessionConfig.cookie?.maxAge,
+  environment: process.env.NODE_ENV || 'not set'
 });
 
 app.use(session(sessionConfig));
