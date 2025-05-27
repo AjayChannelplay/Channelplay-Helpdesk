@@ -7,8 +7,10 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Define API base URL for production - single source of truth
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.channelplay.in';
+// Define API base URL based on environment
+const API_BASE_URL = import.meta.env.PROD
+  ? 'https://api.channelplay.in' // Production uses full URL to backend
+  : ''; // Local development uses Vite proxy with relative paths
 
 // Helper to ensure URL has correct API base
 const getFullApiUrl = (url: string) => {
@@ -17,25 +19,24 @@ const getFullApiUrl = (url: string) => {
     return url;
   }
   
-  // In development, just ensure the URL starts with /api
-  if (import.meta.env.DEV) {
-    // Make sure the URL starts with a slash
-    const formattedUrl = url.startsWith('/') ? url : `/${url}`;
-    // Ensure it starts with /api
-    return formattedUrl.startsWith('/api') ? formattedUrl : `/api${formattedUrl}`;
+  // Format the path properly (ensure it starts with a slash)
+  const formattedPath = url.startsWith('/') ? url : `/${url}`;
+  
+  if (import.meta.env.PROD) {
+    // In production, we need to remove the /api prefix when going to api.channelplay.in
+    // to avoid the duplicate "api" in the URL
+    const apiPath = formattedPath.replace(/^\/api/, '');
+    
+    // Ensure the path starts with a slash
+    const cleanPath = apiPath.startsWith('/') ? apiPath : `/${apiPath}`;
+    
+    return `${API_BASE_URL}${cleanPath}`;
+  } else {
+    // In development, ensure the path starts with /api for the Vite proxy
+    return formattedPath.startsWith('/api') 
+      ? formattedPath 
+      : `/api${formattedPath}`;
   }
-  
-  // For production, ALWAYS use the direct API URL instead of relative paths
-  // This bypasses CloudFront routing issues
-  const apiBase = API_BASE_URL;
-  const apiPath = url.startsWith('/') ? url : `/${url}`;
-  
-  // Always remove /api prefix since we're directly hitting the API server
-  // This prevents duplicate "api" in URLs like https://api.channelplay.in/api/tickets
-  const cleanPath = apiPath.startsWith('/api') ? apiPath.substring(4) : apiPath;
-  const finalPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
-  
-  return `${apiBase}${finalPath}`;
 };
 
 export async function apiRequest(
@@ -44,11 +45,19 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   const fullUrl = getFullApiUrl(url);
-  console.log(`Making ${method} request to: ${fullUrl}`);
+  
+  // Only log in development to avoid exposing sensitive data in production
+  if (!import.meta.env.PROD) {
+    console.log(`Making ${method} request to: ${fullUrl}`);
+  }
   
   const res = await fetch(fullUrl, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    mode: "cors",
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      "Accept": "application/json"
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
