@@ -107,10 +107,12 @@ export async function parseMimeContent(rawEmail: string): Promise<MimeParserResu
         from: parsed.from,
         to: parsed.to,
         cc: parsed.cc,
-        messageId: parsed.messageId,
-        inReplyTo: parsed.inReplyTo,
-        references: parsed.references,
-        attachments: parsed.attachments || []
+        date: parsed.date || null,
+        messageId: parsed.messageId || null,
+        inReplyTo: parsed.inReplyTo || null,
+        references: parsed.references || null,
+        attachments: parsed.attachments || [],
+        headers: parsed.headers || {}
       };
     }
     
