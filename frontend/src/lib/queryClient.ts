@@ -83,24 +83,40 @@ export const getQueryFn: <T>(options: {
     const url = getFullApiUrl(queryKey[0] as string);
     console.log(`Query fetching from: ${url}`);
     
-    const res = await fetch(url, {
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(url, {
+        credentials: "include", // Always include credentials for auth cookies
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest' // Helps with CORS in some environments
+        },
+        mode: 'cors' // Explicitly set CORS mode for cross-domain requests
+      });
 
-    // Handle 401 based on behavior parameter
-    if (res.status === 401) {
-      if (unauthorizedBehavior === "returnNull") {
-        return null;
-      } else if (unauthorizedBehavior === "redirect") {
-        // For fixed credentials system - redirect to login page directly
-        window.location.href = '/auth';
-        return null;
+      // Log authentication status in production to help debug
+      if (import.meta.env.PROD) {
+        console.log(`API auth status: ${url} → ${res.status}`);
       }
-      // If "throw", continue to the throwIfResNotOk below
-    }
 
-    await throwIfResNotOk(res);
-    return await res.json();
+      // Handle 401 based on behavior parameter
+      if (res.status === 401) {
+        console.warn("Authentication failed - status 401");
+        if (unauthorizedBehavior === "returnNull") {
+          return null;
+        } else if (unauthorizedBehavior === "redirect") {
+          // Redirect to login page
+          window.location.href = '/auth';
+          return null;
+        }
+        // If "throw", continue to the throwIfResNotOk below
+      }
+
+      await throwIfResNotOk(res);
+      return await res.json();
+    } catch (error) {
+      console.error(`API request failed for ${url}:`, error);
+      throw error;
+    }
   };
 
 export const queryClient = new QueryClient({

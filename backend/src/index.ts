@@ -74,10 +74,11 @@ const sessionConfig: SessionOptions = {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    // Adjust sameSite based on environment
-    // For dev (HTTP, localhost different ports): 'lax' is needed because secure:false
-    // For prod (HTTPS): 'lax' is a good default. Use 'none' if truly cross-domain and secure:true.
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
+    // Critical for cross-domain authentication
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    // Add domain for production to share cookies across subdomains
+    ...(process.env.NODE_ENV === 'production' && process.env.COOKIE_DOMAIN ? 
+      { domain: process.env.COOKIE_DOMAIN } : {})
   }
 };
 
