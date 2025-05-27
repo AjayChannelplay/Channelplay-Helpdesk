@@ -9,7 +9,12 @@ async function throwIfResNotOk(res: Response) {
 
 // Helper to get the base API URL
 const getApiBaseUrl = () => {
-  return import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  // In development, use relative URLs to leverage Vite's proxy
+  if (import.meta.env.DEV) {
+    return '';
+  }
+  // In production, use the configured API URL or the correct production API
+  return import.meta.env.VITE_API_URL || 'https://api.channelplay.in';
 };
 
 // Helper to ensure URL has correct API base
@@ -19,7 +24,15 @@ const getFullApiUrl = (url: string) => {
     return url;
   }
   
-  // Make sure the URL starts with a slash
+  // In development, just ensure the URL starts with /api
+  if (import.meta.env.DEV) {
+    // Make sure the URL starts with a slash
+    const formattedUrl = url.startsWith('/') ? url : `/${url}`;
+    // Ensure it starts with /api
+    return formattedUrl.startsWith('/api') ? formattedUrl : `/api${formattedUrl}`;
+  }
+  
+  // For production, prepend the API base URL
   const formattedUrl = url.startsWith('/') ? url : `/${url}`;
   return `${getApiBaseUrl()}${formattedUrl}`;
 };
