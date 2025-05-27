@@ -2832,6 +2832,7 @@ This is an automated message, please do not reply.`;
   // Get all tickets with pagination, sorting and filtering
   app.get("/api/tickets", isAuthenticated, async (req, res) => {
     try {
+      console.log('Ticket request params:', req.query);
       // Get query parameters for sorting and filtering
       const sortBy = (req.query.sortBy as string) || "updatedAt"; // Default to updatedAt for newest messages at top
       const sortOrder = (req.query.sortOrder as string) || "desc"; // Default to descending (newest first)
@@ -3031,7 +3032,18 @@ This is an automated message, please do not reply.`;
       console.log('Clean count query:', cleanCountQuery);
       console.log('Clean count params:', cleanCountParams);
       
-      const countResult = await pool.query(cleanCountQuery, cleanCountParams.length > 0 ? cleanCountParams : []);
+      // Add try-catch around the query execution
+      let countResult;
+      try {
+        countResult = await pool.query(cleanCountQuery, cleanCountParams.length > 0 ? cleanCountParams : []);
+        console.log('Count query successful, result:', countResult.rows[0]);
+      } catch (error) {
+        const countError = error as Error;
+        console.error('Error executing count query:', countError);
+        console.error('Query:', cleanCountQuery);
+        console.error('Params:', cleanCountParams);
+        throw new Error(`Count query failed: ${countError.message}`);
+      }
       const totalItems = parseInt(countResult.rows[0].total.toString());
       const totalPages = Math.ceil(totalItems / perPage);
 
@@ -3059,8 +3071,18 @@ This is an automated message, please do not reply.`;
       console.log(`Executing ticket query with LIMIT ${perPage} OFFSET ${offset}`);
 
       // Execute the query with pagination
-      const { rows } = await pool.query(sqlQuery, sqlParams);
-      console.log(`Retrieved ${rows.length} tickets for page ${page}`);
+      let rows;
+      try {
+        const result = await pool.query(sqlQuery, sqlParams);
+        rows = result.rows;
+        console.log(`Retrieved ${rows.length} tickets for page ${page}`);
+      } catch (error) {
+        const queryError = error as Error;
+        console.error('Error executing tickets query:', queryError);
+        console.error('Query:', sqlQuery);
+        console.error('Params:', sqlParams);
+        throw new Error(`Failed to retrieve tickets: ${queryError.message}`);
+      }
 
       // Transform results to match our Ticket type
       const tickets = rows.map((row: any) => ({
@@ -3091,7 +3113,21 @@ This is an automated message, please do not reply.`;
       });
     } catch (error) {
       console.error("Error fetching tickets:", error);
-      res.status(500).json({ message: "Failed to fetch tickets" });
+      // Send a more detailed error message to help diagnose issues
+      let errorMessage = "Failed to fetch tickets";
+      if (error instanceof Error) {
+        errorMessage = `Error: ${error.message}`;
+        console.error("Stack trace:", error.stack);
+      }
+      // Log additional context that might help diagnose the issue
+      console.error("Query parameters:", req.query);
+      console.error("User ID:", req.user?.id);
+      console.error("User role:", req.user?.role);
+      
+      res.status(500).json({ 
+        message: errorMessage,
+        error: process.env.NODE_ENV === 'production' ? 'See server logs for details' : String(error)
+      });
     }
   });
 
