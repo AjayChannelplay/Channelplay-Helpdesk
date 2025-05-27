@@ -21,36 +21,50 @@ app.use(compression());
 
 // CORS configuration
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if(!origin) return callback(null, true);
+  origin: function(requestOrigin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests, server-to-server)
+    // These are not subject to browser CORS policy in the same way.
+    if (!requestOrigin) {
+      return callback(null, true); // `true` allows the request. `cors` lib handles ACAO appropriately.
+    }
     
-    // Define allowed origins
-    const allowedOrigins = [
+    // Define base allowed origins (e.g., for local development)
+    const baseAllowedOrigins = [
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5175',
       'http://localhost:5176'
     ];
     
-    // Add environment variable if it exists
+    let dynamicAllowedOrigins = [...baseAllowedOrigins];
+    
+    // Add FRONTEND_URL from environment variables if it exists
     if (process.env.FRONTEND_URL) {
-      allowedOrigins.push(process.env.FRONTEND_URL);
+      dynamicAllowedOrigins.push(process.env.FRONTEND_URL.trim());
     }
 
-    // Add CORS_ALLOWED_ORIGINS if it exists (comma-separated list)
+    // Add CORS_ALLOWED_ORIGINS from environment variables if it exists (comma-separated list)
     if (process.env.CORS_ALLOWED_ORIGINS) {
-      const corsOrigins = process.env.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
-      allowedOrigins.push(...corsOrigins);
+      const corsEnvOrigins = process.env.CORS_ALLOWED_ORIGINS.split(',')
+        .map(origin => origin.trim())
+        .filter(origin => origin); // Filter out any empty strings from split
+      dynamicAllowedOrigins.push(...corsEnvOrigins);
     }
     
-    console.log('Allowed CORS origins:', allowedOrigins);
+    // Deduplicate the list of allowed origins
+    const finalAllowedOrigins = [...new Set(dynamicAllowedOrigins)];
     
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
+    // For debugging purposes, you can log this on the server
+    // console.log('Request Origin:', requestOrigin);
+    // console.log('Effective Allowed CORS Origins:', finalAllowedOrigins);
+    
+    if (finalAllowedOrigins.includes(requestOrigin)) {
+      // If the requestOrigin is in our list, reflect it in the ACAO header
+      callback(null, requestOrigin);
     } else {
-      console.log('CORS blocked request from:', origin);
-      callback(null, false);
+      // If the origin is not allowed
+      console.log(`CORS blocked request from: ${requestOrigin}. Not in allowed list: ${JSON.stringify(finalAllowedOrigins)}`);
+      callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
     }
   },
   credentials: true,
