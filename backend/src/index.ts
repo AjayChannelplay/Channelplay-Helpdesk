@@ -120,16 +120,19 @@ const sessionConfig: SessionOptions = {
   }
 };
 
-// IMPORTANT: For cross-domain cookies between different domains (CloudFront and api.channelplay.in)
-// We ALWAYS set the domain to .channelplay.in in production to enable cross-domain authentication
+// IMPORTANT: For cross-domain cookies between completely different domains
+// (like CloudFront and api.channelplay.in), we should NOT set a domain
+// unless we're dealing with subdomains of the same parent domain.
 
-if (process.env.NODE_ENV === 'production') {
-  // Set the domain to .channelplay.in to allow cookies to be shared between subdomains
-  const cookieDomain = '.channelplay.in';
-  console.log(`🔒 Setting cookie domain to: ${cookieDomain} for cross-domain authentication`);
-  (sessionConfig.cookie as any).domain = cookieDomain;
-} else {
-  console.log('Development environment: Not setting cookie domain');
+// Only set domain if explicitly requested AND we're using subdomains 
+// of the same parent domain
+if (process.env.NODE_ENV === 'production' && process.env.COOKIE_DOMAIN) {
+  // Only set this if CloudFront and API are on subdomains of the same parent domain
+  // For example, if both are on *.channelplay.in
+  console.log(`Setting cookie domain to: ${process.env.COOKIE_DOMAIN}`);
+  (sessionConfig.cookie as any).domain = process.env.COOKIE_DOMAIN;
+} else if (process.env.NODE_ENV === 'production') {
+  console.log('Cross-domain cookies: Not setting domain attribute for cross-domain cookie sharing');
 }
 
 // Extra safety: Force secure and sameSite in production regardless of env vars

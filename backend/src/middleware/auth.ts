@@ -137,13 +137,6 @@ export function setupAuth(app: Express) {
       req.login(user, (err: Error | null) => {
         if (err) return next(err);
         
-        // CROSS-DOMAIN FIX: Ensure cookies work across domains by explicitly setting session cookie domain
-        if (process.env.NODE_ENV === 'production' && req.session && req.session.cookie) {
-          // Force set domain for all cookies to .channelplay.in
-          (req.session.cookie as any).domain = '.channelplay.in';
-          console.log('🌐 CROSS-DOMAIN: Explicitly set cookie domain to .channelplay.in');
-        }
-        
         // Log cookie debug information
         console.log(`User ${user.username} logged in successfully - bypassed verification`);
         
