@@ -87,9 +87,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      // Normal login success case - redirect to dashboard immediately
+      // Normal login success case - handle navigation more carefully for cookies
       queryClient.setQueryData(["/api/user"], data);
-      window.location.href = '/';
+      
+      // Use query invalidation to force a refetch of user data with cookies
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
+      // For cross-origin cookie handling, avoid using window.location redirect
+      // Instead, use history.pushState which keeps the same document context
+      // This helps preserve cookies better in cross-origin scenarios
+      window.history.pushState({}, "", "/");
+      
+      // Dispatch a navigation event so React router catches the change
+      window.dispatchEvent(new Event('popstate'));
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${data.name}!`,
