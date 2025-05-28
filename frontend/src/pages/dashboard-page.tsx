@@ -52,7 +52,13 @@ export default function DashboardPage() {
       const apiUrl = import.meta.env.PROD
         ? `https://api.channelplay.in/api/user/desks`
         : "/api/user/desks";
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        credentials: 'include',  // Include cookies for authentication
+        mode: 'cors',           // Explicitly set CORS mode
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       if (!response.ok) throw new Error("Failed to fetch user desks");
       return response.json();
     }
@@ -66,7 +72,13 @@ export default function DashboardPage() {
       const apiUrl = import.meta.env.PROD
         ? `https://api.channelplay.in/api/users`
         : "/api/users";
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        credentials: 'include',  // Include cookies for authentication
+        mode: 'cors',           // Explicitly set CORS mode
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       if (!response.ok) throw new Error("Failed to fetch users");
       return response.json();
     }
@@ -106,7 +118,13 @@ export default function DashboardPage() {
       const apiUrl = import.meta.env.PROD
         ? `https://api.channelplay.in/api/tickets?${params.toString()}`
         : `/api/tickets?${params.toString()}`;
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        credentials: 'include',  // Include cookies for authentication
+        mode: 'cors',           // Explicitly set CORS mode
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       if (!response.ok) throw new Error("Failed to fetch tickets");
       const data = await response.json();
       
