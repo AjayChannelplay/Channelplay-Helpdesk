@@ -52,15 +52,19 @@ export async function apiRequest(
     console.log(`Making ${method} request to: ${fullUrl}`);
   }
   
+  // In production, we need to set withCredentials to true for cross-origin requests
+  // This ensures cookies are sent with the request
   const res = await fetch(fullUrl, {
     method,
     mode: "cors",
     headers: {
       ...(data ? { "Content-Type": "application/json" } : {}),
-      "Accept": "application/json"
+      "Accept": "application/json",
+      // The following header helps identify AJAX requests
+      "X-Requested-With": "XMLHttpRequest"
     },
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    credentials: "include", // Always include credentials for cookies
   });
 
   // Handle 401 Unauthorized - Session expired or not logged in
