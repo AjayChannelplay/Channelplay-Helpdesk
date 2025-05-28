@@ -84,17 +84,44 @@ export function setupAuth(app: Express) {
     next();
   };
 
-  // Enhanced isAuthenticated middleware with better logging
+  // Enhanced isAuthenticated middleware with better logging and recovery options
   const isAuthenticated = (req: any, res: any, next: any) => {
-    console.log(`🔐 Auth Check - isAuthenticated: ${req.isAuthenticated()}, Session ID: ${req.sessionID || 'none'}`);
+    console.log(`🔐 Auth Check - Path: ${req.path}, isAuthenticated: ${req.isAuthenticated()}, Session ID: ${req.sessionID || 'none'}`);
+    console.log(`🍪 Cookies: ${req.headers.cookie || 'No cookies sent'}`);
+    
+    // Check for special retry header from frontend session recovery mechanism
+    const isRetryAttempt = req.headers['x-session-retry'] === 'true';
     
     if (req.isAuthenticated()) {
-      console.log(`✅ User authenticated: ${req.user?.email}`);
+      // Update session expiry on each authenticated request to keep it fresh
+      if (req.session) {
+        req.session.touch();
+      }
+      
+      // Track the last time this session was successfully used
+      if (req.session) {
+        req.session.lastActive = Date.now();
+      }
+      
+      console.log(`✅ User authenticated: ${req.user?.email}, Role: ${req.user?.role || 'not specified'}`);
       return next();
     }
     
-    console.log(`❌ Unauthorized request - No valid session`); 
-    return res.status(401).json({ message: "Unauthorized" });
+    // Special handling for API requests that should have a session
+    // Log detailed diagnostic information to help troubleshoot
+    console.log(`❌ Unauthorized request to ${req.path}`);
+    console.log(`💭 Request headers: ${JSON.stringify(req.headers)}`);
+    
+    if (isRetryAttempt) {
+      console.log(`⚠️ This was a retry attempt from the frontend - session still invalid`);
+    }
+    
+    // Send a 401 response with information that might help debugging
+    return res.status(401).json({ 
+      message: "Unauthorized", 
+      sessionPresent: !!req.sessionID,
+      time: new Date().toISOString()
+    });
   };
 
   app.post("/api/register", debugSession, async (req, res, next) => {

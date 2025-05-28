@@ -40,6 +40,54 @@ const getFullApiUrl = (url: string) => {
   }
 };
 
+// Track last successful session time to help with session management
+let lastSuccessfulSessionTime: number | null = null;
+let sessionRefreshInProgress = false;
+
+// Function to check if we have a recent successful session
+const hasRecentSession = () => {
+  if (!lastSuccessfulSessionTime) return false;
+  // Consider a session valid if it was successful in the last 5 minutes
+  return (Date.now() - lastSuccessfulSessionTime) < 5 * 60 * 1000;
+};
+
+// Function to attempt session refresh if authentication fails
+async function attemptSessionRefresh(): Promise<boolean> {
+  // Avoid multiple simultaneous refresh attempts
+  if (sessionRefreshInProgress) return false;
+  
+  try {
+    sessionRefreshInProgress = true;
+    console.log('🔄 Attempting to refresh session...');
+    
+    // Try to hit the /api/user endpoint to check session
+    const checkUrl = getFullApiUrl('/api/user');
+    const response = await fetch(checkUrl, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    if (response.ok) {
+      console.log('✅ Session refresh successful');
+      lastSuccessfulSessionTime = Date.now();
+      return true;
+    }
+    
+    console.log('❌ Session refresh failed');
+    return false;
+  } catch (error) {
+    console.error('Error refreshing session:', error);
+    return false;
+  } finally {
+    sessionRefreshInProgress = false;
+  }
+}
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -52,25 +100,60 @@ export async function apiRequest(
     console.log(`Making ${method} request to: ${fullUrl}`);
   }
   
+  // Add a special debugging header if we've had a recent successful session
+  // This helps diagnose issues where cookies aren't being properly sent
+  const extraHeaders: Record<string, string> = {};
+  if (hasRecentSession()) {
+    extraHeaders['X-Recent-Session'] = 'true';
+  }
+  
   // In production, we need to set withCredentials to true for cross-origin requests
   // This ensures cookies are sent with the request
-  const res = await fetch(fullUrl, {
+  let res = await fetch(fullUrl, {
     method,
     mode: "cors",
     headers: {
       ...(data ? { "Content-Type": "application/json" } : {}),
       "Accept": "application/json",
       // The following header helps identify AJAX requests
-      "X-Requested-With": "XMLHttpRequest"
+      "X-Requested-With": "XMLHttpRequest",
+      ...extraHeaders
     },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include", // Always include credentials for cookies
   });
 
-  // Handle 401 Unauthorized - Session expired or not logged in
-  if (res.status === 401) {
-    console.warn("401 Unauthorized - Session expired or not logged in");
-    // For fixed credentials system - redirect to login page directly
+  // For GET requests, if we get a 401 and we haven't tried refreshing the session, try to refresh
+  if (res.status === 401 && method === 'GET' && !url.includes('/api/login')) {
+    console.warn(`401 Unauthorized for ${url} - Attempting session recovery...`);
+    
+    const refreshSuccessful = await attemptSessionRefresh();
+    if (refreshSuccessful) {
+      // Retry the original request with the refreshed session
+      console.log(`Retrying ${method} ${url} with refreshed session`);
+      res = await fetch(fullUrl, {
+        method,
+        mode: "cors",
+        headers: {
+          ...(data ? { "Content-Type": "application/json" } : {}),
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          "X-Session-Retry": "true"
+        },
+        body: data ? JSON.stringify(data) : undefined,
+        credentials: "include",
+      });
+      
+      // If the retry was successful, update session time and return
+      if (res.ok) {
+        console.log(`✅ Retry successful for ${url}`);
+        lastSuccessfulSessionTime = Date.now();
+        return res;
+      }
+    }
+    
+    // If refresh didn't work or retry failed, redirect to login
+    console.warn("Session recovery failed - redirecting to login");
     window.location.href = '/auth';
     throw new Error("401: Unauthorized - Your session has expired. Please log in again.");
   }

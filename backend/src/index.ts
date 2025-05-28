@@ -14,9 +14,24 @@ import { setupAuth } from './middleware/auth';
 import { startGmailAutoPolling } from './services/gmail-auto-polling-clean';
 
 const app = express();
-// CRITICAL: Trust proxy (needed for secure cookies behind reverse proxy)
-// This is essential for SameSite=None cookies to work correctly
+// CRITICAL: Trust proxy is critical for secure cookies to work behind load balancers and proxies
 app.set('trust proxy', 1);
+
+// Add CORS headers to preflight OPTIONS requests as early as possible
+app.use((req, res, next) => {
+  // For OPTIONS requests, respond immediately with CORS headers
+  if (req.method === 'OPTIONS') {
+    console.log(`🔄 Early CORS handling for OPTIONS request to ${req.path}`);
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    return res.status(204).end();
+  }
+  next();
+});
+
 console.log('✅ Set trust proxy to 1 - required for secure cookies to work behind proxy');
 const PORT = process.env.PORT || 3001;
 
