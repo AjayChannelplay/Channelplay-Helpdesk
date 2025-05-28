@@ -72,39 +72,43 @@ const allowedOrigins = Array.from(allowedOriginsSet);
 logCorsInfo('Final allowed origins', allowedOrigins);
 
 // Only use Express CORS middleware in development
-// Always enable CORS in Express to ensure proper cross-origin auth
+// Make sure CloudFront domain is in allowed origins list
 if (!allowedOrigins.includes('https://d1hp5pkc3976q6.cloudfront.net')) {
   allowedOrigins.push('https://d1hp5pkc3976q6.cloudfront.net');
   console.log('Added CloudFront domain to allowed origins');
 }
 
-console.log('Setting up CORS with the following origins:', allowedOrigins);
-
-// Always use CORS middleware regardless of environment
-app.use(cors({
-  origin: function(requestOrigin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!requestOrigin) {
-      console.log('Allowing request with no origin');
-      return callback(null, true);
-    }
-    
-    logCorsInfo('Request received from origin', requestOrigin);
-    
-    // Check if the request origin is in our allowed list
-    if (allowedOrigins.includes(requestOrigin)) {
-      // Critical: We return the EXACT origin that was requested
-      console.log(`Allowing request from origin: ${requestOrigin}`);
-      callback(null, requestOrigin);
-    } else {
-      console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
-      callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
-    }
-  },
-  credentials: true, // This is critical for cookies to work cross-origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'] 
-}));
+// In development, Express handles CORS
+// In production, Nginx handles CORS (Express CORS disabled)
+if (!isProduction) {
+  console.log('Development environment: Using Express CORS middleware');
+  console.log('CORS allowed origins:', allowedOrigins);
+  
+  app.use(cors({
+    origin: function(requestOrigin, callback) {
+      // Allow requests with no origin
+      if (!requestOrigin) {
+        return callback(null, true);
+      }
+      
+      logCorsInfo('Request received from origin', requestOrigin);
+      
+      // Check if the request origin is in our allowed list
+      if (allowedOrigins.includes(requestOrigin)) {
+        // Critical: We return the EXACT origin that was requested
+        callback(null, requestOrigin);
+      } else {
+        console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
+        callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
+      }
+    },
+    credentials: true, // This is critical for cookies to work cross-origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  }));
+} else {
+  console.log('Production environment: CORS handling disabled in Express - using Nginx CORS headers instead.');
+}
 
 // Logging
 app.use(morgan('combined'));
