@@ -73,7 +73,31 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  // Debug middleware to log session information
+  const debugSession = (req: any, res: any, next: any) => {
+    console.log('🔍 SESSION DEBUG:');
+    console.log('- Session ID:', req.sessionID || 'No session ID');
+    console.log('- Is Authenticated:', req.isAuthenticated ? req.isAuthenticated() : 'Not available');
+    console.log('- User:', req.user ? `ID: ${req.user.id}, Email: ${req.user.email}` : 'No user');
+    console.log('- Cookies:', req.headers.cookie || 'No cookies');
+    console.log('- Session Data:', req.session);
+    next();
+  };
+
+  // Enhanced isAuthenticated middleware with better logging
+  const isAuthenticated = (req: any, res: any, next: any) => {
+    console.log(`🔐 Auth Check - isAuthenticated: ${req.isAuthenticated()}, Session ID: ${req.sessionID || 'none'}`);
+    
+    if (req.isAuthenticated()) {
+      console.log(`✅ User authenticated: ${req.user?.email}`);
+      return next();
+    }
+    
+    console.log(`❌ Unauthorized request - No valid session`); 
+    return res.status(401).json({ message: "Unauthorized" });
+  };
+
+  app.post("/api/register", debugSession, async (req, res, next) => {
     try {
       const { username, password, name, email } = req.body;
       

@@ -1167,12 +1167,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // USER MANAGEMENT ROUTES
 
   // Get current authenticated user
+  // Debug middleware for all requests
+  app.use((req, res, next) => {
+    console.log('🍪 Cookie header:', req.headers.cookie || 'No cookies');
+    next();
+  });
+
   app.get("/api/user", (req, res) => {
+    console.log('📌 /api/user route accessed');
+    console.log('👤 User authenticated?', req.isAuthenticated());
+    console.log('🆔 Session ID:', req.sessionID || 'No session ID');
+    
     if (req.isAuthenticated()) {
       // Return user info without sensitive data
       const { password, resetToken, resetTokenExpiry, ...userInfo } = req.user as any;
+      console.log('✅ Returning user info for:', userInfo.email);
       return res.json(userInfo);
     }
+    
+    console.log('❌ Not authenticated - No valid session cookie received');
     return res.status(401).json({ message: "Not authenticated" });
   });
 

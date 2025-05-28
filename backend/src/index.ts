@@ -96,29 +96,56 @@ if (!allowedOrigins.includes('https://d1hp5pkc3976q6.cloudfront.net')) {
 
 // Always use Express to handle CORS in both development and production
 console.log(`${isProduction ? 'Production' : 'Development'} environment: Using Express CORS middleware`);
-console.log('CORS allowed origins:', allowedOrigins);
 
+// Add a dedicated OPTIONS handler before CORS middleware to ensure preflight requests work correctly
+app.options('*', (req, res) => {
+  // Log all preflight requests for debugging
+  console.log(`🔄 CORS Preflight request to ${req.path} from origin: ${req.headers.origin}`);
+  
+  // Set CORS headers for preflight requests
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
+  
+  // End preflight request with 204 No Content
+  res.status(204).end();
+});
+
+// Enhanced CORS Configuration
 app.use(cors({
   origin: function(requestOrigin, callback) {
     // Allow requests with no origin
     if (!requestOrigin) {
+      console.log('CORS: Request received with no origin');
       return callback(null, true);
     }
     
-    logCorsInfo('Request received from origin', requestOrigin);
-    
-    // Check if the request origin is in our allowed list
-    if (allowedOrigins.includes(requestOrigin)) {
-      // Critical: We return the EXACT origin that was requested
-      callback(null, requestOrigin);
-    } else {
-      console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
-      callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
+    // Allow localhost in development
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`CORS: Development - allowing origin: ${requestOrigin}`);
+      callback(null, true);
+      return;
     }
+    
+    // In production, we only allow requests from our CloudFront domain and API domain
+    if (requestOrigin.includes('cloudfront.net') || 
+        requestOrigin.includes('channelplay.in') ||
+        requestOrigin.includes('localhost')) {
+      console.log(`CORS: Production - allowing origin: ${requestOrigin}`);
+      callback(null, true);
+      return;
+    }
+    
+    // Log and reject any other origins
+    console.log(`CORS: Rejecting request from unauthorized origin: ${requestOrigin}`);
+    callback(new Error(`Origin ${requestOrigin} not allowed by CORS policy`));
   },
-  credentials: true, // This is critical for cookies to work cross-origin
+  credentials: true, // Critical for cookies to work cross-origin
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  maxAge: 86400 // Cache preflight request results for 24 hours (in seconds)
 }));
 
 // IMPORTANT: If using this approach, make sure to DISABLE any CORS headers in Nginx
@@ -131,33 +158,45 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Session configuration
+// Session configuration with explicit settings for cross-origin cookies
 const sessionConfig: SessionOptions = {
   secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
+  rolling: true,  // Resets expiration countdown on every response
+  name: 'helpdesk.sid', // Explicit cookie name for better tracking
+  proxy: true, // Trust the reverse proxy
   cookie: {
-    // Use secure only in production, not in development (since localhost is HTTP)
-    secure: process.env.NODE_ENV === 'production',  // Only true in production
-    httpOnly: true,       // ✅ Security best practice
+    // IMPORTANT: For cross-domain cookies, secure MUST be true
+    secure: true,  // Always use secure cookies for both dev and prod to ensure consistency
+    httpOnly: true, // Prevent JavaScript access to the cookie
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for production, 'lax' for development
+    // IMPORTANT: For cross-domain cookies, sameSite MUST be 'none'
+    sameSite: 'none', // Required for cross-origin cookies
+    path: '/'        // Ensure cookie is sent with all requests
   }
 };
 
-// IMPORTANT: For cross-domain cookies between completely different domains
-// (like CloudFront and api.channelplay.in), we should NOT set a domain
-// unless we're dealing with subdomains of the same parent domain.
+// Add debug message about session configuration
+console.log('📋 Session Configuration:', {
+  rolling: sessionConfig.rolling,
+  name: sessionConfig.name,
+  proxy: sessionConfig.proxy,
+  cookie: {
+    secure: sessionConfig.cookie?.secure,
+    httpOnly: sessionConfig.cookie?.httpOnly,
+    sameSite: sessionConfig.cookie?.sameSite,
+    path: sessionConfig.cookie?.path,
+    maxAge: sessionConfig.cookie?.maxAge,
+  }
+});
 
-// Only set domain if explicitly requested AND we're using subdomains 
-// of the same parent domain
+// For cross-domain cookies between completely different domains, we should NOT set a domain
 if (process.env.NODE_ENV === 'production' && process.env.COOKIE_DOMAIN) {
-  // Only set this if CloudFront and API are on subdomains of the same parent domain
-  // For example, if both are on *.channelplay.in
-  console.log(`Setting cookie domain to: ${process.env.COOKIE_DOMAIN}`);
+  console.log(`🔹 Setting cookie domain to: ${process.env.COOKIE_DOMAIN}`);
   (sessionConfig.cookie as any).domain = process.env.COOKIE_DOMAIN;
-} else if (process.env.NODE_ENV === 'production') {
-  console.log('Cross-domain cookies: Not setting domain attribute for cross-domain cookie sharing');
+} else {
+  console.log('🔹 Cross-domain cookies: Not setting domain for cross-domain cookie sharing');
 }
 
 // Extra safety: Force secure and sameSite in production regardless of env vars
