@@ -135,10 +135,22 @@ export default function ReplyForm({
       });
       
       // Use fetch directly for FormData, as apiRequest doesn't support formData
-      const res = await fetch(`/api/tickets/${ticketId}/messages`, {
+      // In production, use the API server directly instead of CloudFront
+      const apiUrl = import.meta.env.PROD
+        ? `https://api.channelplay.in/api/tickets/${ticketId}/messages`
+        : `/api/tickets/${ticketId}/messages`;
+        
+      console.log(`Sending message to: ${apiUrl}`);
+      
+      const res = await fetch(apiUrl, {
         method: "POST",
         body: formData,
-        credentials: "include"
+        credentials: "include",
+        mode: 'cors',
+        headers: {
+          // FormData sets its own Content-Type with boundary
+          'X-Requested-With': 'XMLHttpRequest'  // Helps identify AJAX requests
+        }
       });
       
       // Enhanced error handling, similar to apiRequest
@@ -234,10 +246,22 @@ export default function ReplyForm({
     try {
       setIsSubmitting(true);
       // Use fetch directly for FormData
-      const res = await fetch(`/api/tickets/${ticketId}/messages`, {
+      // In production, use the API server directly instead of CloudFront
+      const apiUrl = import.meta.env.PROD
+        ? `https://api.channelplay.in/api/tickets/${ticketId}/messages`
+        : `/api/tickets/${ticketId}/messages`;
+        
+      console.log(`Sending message with attachments to: ${apiUrl}`);
+      
+      const res = await fetch(apiUrl, {
         method: "POST",
         body: formData,
-        credentials: "include"
+        credentials: "include",
+        mode: 'cors',
+        headers: {
+          // FormData sets its own Content-Type with boundary
+          'X-Requested-With': 'XMLHttpRequest'  // Helps identify AJAX requests
+        }
       });
       
       // Error handling

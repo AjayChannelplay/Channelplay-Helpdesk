@@ -874,18 +874,31 @@ export default function ConversationView({
         throw new Error("Invalid ticket ID");
       }
       
-      const endpoint = `/api/tickets/${numericTicketId}`;
-      console.log(`Making API request to ${endpoint}`);
+      // Create endpoint and use the correct domain in production
+      let endpoint = `/api/tickets/${numericTicketId}`;
       
-      // Direct fetch implementation to eliminate any possible issues with getQueryFn
-      return fetch(endpoint)
-        .then(response => {
-          if (!response.ok) {
-            console.error(`API request failed with status: ${response.status}`);
-            throw new Error(`API request failed with status: ${response.status}`);
-          }
-          return response.json();
-        })
+      // In production, use the API server directly instead of CloudFront
+      const apiUrl = import.meta.env.PROD
+        ? `https://api.channelplay.in/api/tickets/${numericTicketId}`
+        : endpoint;
+      
+      console.log(`Making API request to ${apiUrl}`);
+      
+      // Direct fetch implementation with proper CORS and credentials settings
+      return fetch(apiUrl, {
+        credentials: 'include',  // Include cookies for authentication
+        mode: 'cors',           // Explicitly set CORS mode
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'  // Helps identify AJAX requests
+        }
+      }).then(response => {
+        if (!response.ok) {
+          console.error(`API request failed with status: ${response.status}`);
+          throw new Error(`API request failed with status: ${response.status}`);
+        }
+        return response.json();
+      })
         .then(data => {
           console.log(`API response received:`, data);
           return data;
