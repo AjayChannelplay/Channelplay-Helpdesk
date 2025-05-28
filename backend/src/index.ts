@@ -14,8 +14,10 @@ import { setupAuth } from './middleware/auth';
 import { startGmailAutoPolling } from './services/gmail-auto-polling-clean';
 
 const app = express();
-// Tell Express we're behind a proxy (Nginx) - needed for secure cookies to work
+// CRITICAL: Trust proxy (needed for secure cookies behind reverse proxy)
+// This is essential for SameSite=None cookies to work correctly
 app.set('trust proxy', 1);
+console.log('✅ Set trust proxy to 1 - required for secure cookies to work behind proxy');
 const PORT = process.env.PORT || 3001;
 
 // Security middleware
@@ -70,34 +72,39 @@ const allowedOrigins = Array.from(allowedOriginsSet);
 logCorsInfo('Final allowed origins', allowedOrigins);
 
 // Only use Express CORS middleware in development
-// In production, Nginx handles CORS
-if (!isProduction) {
-  console.log('Development environment: Using Express CORS middleware');
-  app.use(cors({
-    origin: function(requestOrigin, callback) {
-      // Allow requests with no origin
-      if (!requestOrigin) {
-        return callback(null, true);
-      }
-      
-      logCorsInfo('Request received from origin', requestOrigin);
-      
-      // Check if the request origin is in our allowed list
-      if (allowedOrigins.includes(requestOrigin)) {
-        // Critical: We return the EXACT origin that was requested
-        callback(null, requestOrigin);
-      } else {
-        console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
-        callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-  }));
-} else {
-  console.log('Production environment: CORS handling disabled in Express - using Nginx CORS headers instead.');
+// Always enable CORS in Express to ensure proper cross-origin auth
+if (!allowedOrigins.includes('https://d1hp5pkc3976q6.cloudfront.net')) {
+  allowedOrigins.push('https://d1hp5pkc3976q6.cloudfront.net');
+  console.log('Added CloudFront domain to allowed origins');
 }
+
+console.log('Setting up CORS with the following origins:', allowedOrigins);
+
+// Always use CORS middleware regardless of environment
+app.use(cors({
+  origin: function(requestOrigin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!requestOrigin) {
+      console.log('Allowing request with no origin');
+      return callback(null, true);
+    }
+    
+    logCorsInfo('Request received from origin', requestOrigin);
+    
+    // Check if the request origin is in our allowed list
+    if (allowedOrigins.includes(requestOrigin)) {
+      // Critical: We return the EXACT origin that was requested
+      console.log(`Allowing request from origin: ${requestOrigin}`);
+      callback(null, requestOrigin);
+    } else {
+      console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
+      callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
+    }
+  },
+  credentials: true, // This is critical for cookies to work cross-origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'] 
+}));
 
 // Logging
 app.use(morgan('combined'));
@@ -158,6 +165,14 @@ console.log('📱 Express config:', {
   environment: process.env.NODE_ENV || 'development',
   behindProxy: true
 });
+
+// Force essential settings for cross-origin cookies
+if (process.env.NODE_ENV === 'production') {
+  console.log('⚠️ Forcing cross-origin cookie settings for production');
+  sessionConfig.cookie!.secure = true;
+  sessionConfig.cookie!.sameSite = 'none';
+  // Don't set domain unless you're using subdomains of the same parent domain
+}
 
 app.use(session(sessionConfig));
 
