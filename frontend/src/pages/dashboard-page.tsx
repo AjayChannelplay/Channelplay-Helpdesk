@@ -48,7 +48,11 @@ export default function DashboardPage() {
   const { data: userDesks = [] } = useQuery<Desk[]>({
     queryKey: ["/api/user/desks"],
     queryFn: async () => {
-      const response = await fetch("/api/user/desks");
+      // Use direct API URL in production
+      const apiUrl = import.meta.env.PROD
+        ? `https://api.channelplay.in/api/user/desks`
+        : "/api/user/desks";
+      const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Failed to fetch user desks");
       return response.json();
     }
@@ -58,7 +62,11 @@ export default function DashboardPage() {
   const { data: users = [] } = useQuery({
     queryKey: ["/api/users"],
     queryFn: async () => {
-      const response = await fetch("/api/users");
+      // Use direct API URL in production
+      const apiUrl = import.meta.env.PROD
+        ? `https://api.channelplay.in/api/users`
+        : "/api/users";
+      const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Failed to fetch users");
       return response.json();
     }
@@ -94,7 +102,11 @@ export default function DashboardPage() {
         }
       }
       
-      const response = await fetch(`/api/tickets?${params.toString()}`);
+      // Use direct API URL in production
+      const apiUrl = import.meta.env.PROD
+        ? `https://api.channelplay.in/api/tickets?${params.toString()}`
+        : `/api/tickets?${params.toString()}`;
+      const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Failed to fetch tickets");
       const data = await response.json();
       
