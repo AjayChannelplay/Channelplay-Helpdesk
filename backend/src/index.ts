@@ -21,7 +21,23 @@ console.log('✅ Set trust proxy to 1 - required for secure cookies to work behi
 const PORT = process.env.PORT || 3001;
 
 // Security middleware
-app.use(helmet());
+// Configure helmet with settings that allow cross-origin cookies
+app.use(
+  helmet({
+    // Disable contentSecurityPolicy in development for easier testing
+    contentSecurityPolicy: process.env.NODE_ENV === 'production',
+    
+    // These settings help with cross-origin cookies
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    
+    // Ensure we don't interfere with frame handling
+    frameguard: {
+      action: 'sameorigin'
+    }
+  })
+);
 app.use(compression());
 
 // CORS Configuration - Environment-aware approach
