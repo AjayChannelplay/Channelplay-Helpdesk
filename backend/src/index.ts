@@ -78,37 +78,35 @@ if (!allowedOrigins.includes('https://d1hp5pkc3976q6.cloudfront.net')) {
   console.log('Added CloudFront domain to allowed origins');
 }
 
-// In development, Express handles CORS
-// In production, Nginx handles CORS (Express CORS disabled)
-if (!isProduction) {
-  console.log('Development environment: Using Express CORS middleware');
-  console.log('CORS allowed origins:', allowedOrigins);
-  
-  app.use(cors({
-    origin: function(requestOrigin, callback) {
-      // Allow requests with no origin
-      if (!requestOrigin) {
-        return callback(null, true);
-      }
-      
-      logCorsInfo('Request received from origin', requestOrigin);
-      
-      // Check if the request origin is in our allowed list
-      if (allowedOrigins.includes(requestOrigin)) {
-        // Critical: We return the EXACT origin that was requested
-        callback(null, requestOrigin);
-      } else {
-        console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
-        callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
-      }
-    },
-    credentials: true, // This is critical for cookies to work cross-origin
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-  }));
-} else {
-  console.log('Production environment: CORS handling disabled in Express - using Nginx CORS headers instead.');
-}
+// Always use Express to handle CORS in both development and production
+console.log(`${isProduction ? 'Production' : 'Development'} environment: Using Express CORS middleware`);
+console.log('CORS allowed origins:', allowedOrigins);
+
+app.use(cors({
+  origin: function(requestOrigin, callback) {
+    // Allow requests with no origin
+    if (!requestOrigin) {
+      return callback(null, true);
+    }
+    
+    logCorsInfo('Request received from origin', requestOrigin);
+    
+    // Check if the request origin is in our allowed list
+    if (allowedOrigins.includes(requestOrigin)) {
+      // Critical: We return the EXACT origin that was requested
+      callback(null, requestOrigin);
+    } else {
+      console.error(`CORS blocked request from unauthorized origin: ${requestOrigin}`);
+      callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
+    }
+  },
+  credentials: true, // This is critical for cookies to work cross-origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
+
+// IMPORTANT: If using this approach, make sure to DISABLE any CORS headers in Nginx
+// to avoid duplicate header issues.
 
 // Logging
 app.use(morgan('combined'));
