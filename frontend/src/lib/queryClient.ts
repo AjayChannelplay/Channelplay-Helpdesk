@@ -23,14 +23,15 @@ const getFullApiUrl = (url: string) => {
   const formattedPath = url.startsWith('/') ? url : `/${url}`;
   
   if (import.meta.env.PROD) {
-    // In production, we need to remove the /api prefix when going to api.channelplay.in
-    // to avoid the duplicate "api" in the URL
-    const apiPath = formattedPath.replace(/^\/api/, '');
+    // In production, we DO NOT remove the /api prefix anymore
+    // The backend routes expect the /api prefix even on api.channelplay.in
     
-    // Ensure the path starts with a slash
-    const cleanPath = apiPath.startsWith('/') ? apiPath : `/${apiPath}`;
+    // Ensure it starts with /api
+    const apiPath = formattedPath.startsWith('/api') 
+      ? formattedPath 
+      : `/api${formattedPath}`;
     
-    return `${API_BASE_URL}${cleanPath}`;
+    return `${API_BASE_URL}${apiPath}`;
   } else {
     // In development, ensure the path starts with /api for the Vite proxy
     return formattedPath.startsWith('/api') 
